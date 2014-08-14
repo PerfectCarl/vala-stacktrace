@@ -11,4 +11,4 @@ valac -g --save-temps -X -rdynamic --pkg linux --pkg gee-0.8 -o ./samples/sample
 
 rm ./samples/sample3
 valac -g --save-temps -X -rdynamic --pkg linux --pkg gee-0.8 -o ./samples/sample3 ./samples/error_exceptions.vala ./src/Stacktrace.vala
-G_DEBUG=fatal-criticals ./samples/sample3
+./samples/sample3

@@ -264,7 +264,12 @@ public class Stacktrace {
         return "\x1b[0m";
     }
 
-    private string  get_color_code (Style attr, Colors fg, Colors bg)
+    private string get_reset_style ()
+    {
+        return get_color_code (Style.DIM, Colors.WHITE, background_color);
+    }
+    
+    private string  get_color_code (Style attr, Colors fg, Colors bg=background_color)
     {
         /* Command is the control command to the terminal */
         var result = "%c[%d;%d;%dm".printf ( 0x1B, (int)attr, (int)fg + 30, (int)bg + 40);
@@ -276,15 +281,19 @@ public class Stacktrace {
         return sig.to_string ();
     }
 
-    private string get_printable_function (Frame frame)
+    private string get_printable_function (Frame frame, int padding = 0)
     {
         var result = "";
         if( frame.function == "" )
             result = "<unknown>";
-        else
-            result =  "'" + frame.function + "'";
-
-        return get_color_code (Style.BRIGHT, Colors.WHITE, Colors.BLACK) + result + get_reset_code ();
+        else {
+			var s = "" ;
+			int count = padding-get_signal_name().length;
+			if (padding != 0 && count >0)
+				s = string.nfill( count, ' ') ;
+            result =  "'" + frame.function + "'" + s;
+		}
+        return get_color_code (Style.BRIGHT, Colors.WHITE) + result + get_reset_code ();
     }
 
     private string get_printable_line_number ( Frame frame )
@@ -298,31 +307,78 @@ public class Stacktrace {
         return result;
     }
 
-    private string get_printable_file_short_path ( Frame frame )
+    private string get_printable_file_short_path ( Frame frame, bool pad=true )
     {
         var path = frame.file_short_path;
         var result = "";
-        var color = get_color_code (Style.BRIGHT, Colors.WHITE, Colors.BLACK);
-        if( path.length >= max_file_name_length )
-            result = color + path  + get_reset_code ();
+        var color = get_color_code (Style.BRIGHT, Colors.WHITE);
+        if( path.length >= max_file_name_length && !pad)
+            result = color + path  + get_reset_style ();
         else {
-            result =  color + path + get_reset_code ();
+            result =  color + path + get_reset_style ();
             result =  result + string.nfill ( max_file_name_length - path.length, ' ' );
         }
         return result;
     }
+    
+    Colors background_color = Colors.BLACK ;
+    int title_length = 0 ;
+    
+	private string get_printable_title()
+	{
+		var c = get_color_code (Style.DIM, Colors.WHITE, Colors.RED);
+		var color = get_color_code (Style.BRIGHT, Colors.WHITE, Colors.RED);
+		
+		var result = "%sAn error occured %s(%s)%s".printf(
+			c,
+			color,
+			get_signal_name (),
+			get_reset_style ()) ;
+		title_length = 	get_signal_name ().length ;
+		return result ;
+	}
 
+	private string get_reason ()
+	{
+		if( sig == ProcessSignal.TRAP ) {
+			var color = get_color_code (Style.BRIGHT, Colors.WHITE, Colors.BLACK);
+			return "The reason is likely %san uncaught error%s".printf (
+				color, get_reset_code ()) ;
+		}
+		if( sig == ProcessSignal.ABRT ) {
+			var color = get_color_code (Style.BRIGHT, Colors.WHITE, Colors.BLACK);
+			return "The reason is likely %sa failed assertion (assert...)%s".printf (
+				color, get_reset_code ()) ;
+		}
+		if( sig == ProcessSignal.SEGV ) {
+			var color = get_color_code (Style.BRIGHT, Colors.WHITE, Colors.BLACK);
+			return "The reason is likely %sa null reference being used%s".printf (
+				color, get_reset_code ()) ;
+		}
+		return "Unknown reason." ;
+	}
+	
     public void print ()
     {
-        var header = "An error occured (%s)\n\n".printf (get_signal_name ());
-        if( first_vala != null )
-            header = "An error occured (%s) in %s, line %s in %s\n\n".printf (
-                get_signal_name (),
-                first_vala.file_short_path,
+		background_color = Colors.RED ;
+        var header = "%s\n\n".printf (
+			get_printable_title());
+        if( first_vala != null ) {
+            header = "%s in %s, line %s in %s\n".printf (
+				get_printable_title(),
+                get_printable_file_short_path ( first_vala, false),
                 first_vala.line_number,
                 get_printable_function (first_vala));
-
+                title_length += first_vala.line_number.length +
+					first_vala.function.length +
+					first_vala.file_short_path.length ;
+		}
         stdout.printf (header);
+		background_color = Colors.BLACK ;
+		var reason = get_reason () ;
+		stdout.printf( "%s   %s.\n\n",
+			get_color_code( Style.DIM, Colors.WHITE),
+			reason ) ;
         int i = 1;
         foreach( var frame in _frames )
         {
@@ -332,30 +388,37 @@ public class Stacktrace {
                 //     #2  ./OtherModule.c      line 80      in 'other_module_do_it'
                 //         at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/module/OtherModule.vala:10
                 var str = " %s  #%d  %s   line %s    in %s\n";
+				background_color = Colors.BLACK ;
+				var lead = " ";
+				var ending1 = "" ;
+				var function_padding = 0 ;
+				if( frame == first_vala )
+				{
+					lead = "*";
+					background_color = Colors.RED ;
+					ending1 = string.nfill(66-title_length, ' ' ) ;
+					function_padding = 22  ;
+				}
                 if( frame.line_number == "" )
                 {
                     str = " %s  #%d  <unknown>  %s  in %s\n";
-                    var lead = " ";
-                    if( frame == first_vala )
-                        lead = "*";
                     str = str.printf (
                         lead,
                         i,
                         string.nfill ( max_file_name_length + max_line_number_length - 1, ' ' ),
                         get_printable_function (frame) );
                 } else   {
-                    var lead = " ";
-                    if( frame == first_vala )
-                        lead = "*";
                     str = str.printf (
                         lead,
                         i,
                         get_printable_file_short_path ( frame),
                         get_printable_line_number (frame),
-                        get_printable_function (frame) );
+                        get_printable_function (frame, function_padding) );
                 }
                 stdout.printf ( str);
-                str = "        at %s\n".printf ( frame.file_path);
+                
+                str = "        at %s\n".printf (
+					frame.file_path);
                 stdout.printf ( str);
 
                 i++;
@@ -372,8 +435,9 @@ public class Stacktrace {
 
     public static void crash_on_critical ()
     {
-        var variables = Environ.get ();
-        Environ.set_variable (variables, "G_DEBUG", "fatal-criticals" );
+        //var variables = Environ.get ();
+        //Environ.set_variable (variables, "G_DEBUG", "fatal-criticals" );
+		Log.set_always_fatal (LogLevelFlags.LEVEL_CRITICAL) ;
     }
 
     public static void handler (int sig) {
