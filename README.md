@@ -16,6 +16,11 @@ int main (string[] args) {
 }
 ```
 
+And build your application with `-rdynamic` 
+```
+valac -g -X -rdynamic -o sample <your vala files>
+```
+
 The output is :
 
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/output.png)
