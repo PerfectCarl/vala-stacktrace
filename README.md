@@ -5,18 +5,18 @@ Vala stracktrace displays the application stacktrace when your application crash
 
 Just add the following lines : 
 
-```
+```java
 int main (string[] args) {
     Stacktrace.register_handlers () ;
 	  
-	  stdout.printf("  This program will crash !\n" ) ;
+    stdout.printf("  This program will crash !\n" ) ;
 
     this_will_crash () ;
     return 0 ;
 }
 ```
 
-The output is 
+The output is :
 
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/output.png)
 
