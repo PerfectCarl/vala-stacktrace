@@ -16,7 +16,10 @@ private void this_will_crash ()
 
 int main (string[] args) {
     Stacktrace.register_handlers () ;
-
+	stdout.printf("  ------------------ \n" ) ;
+	stdout.printf("  This program will crash \n" ) ;
+	stdout.printf("  ------------------ \n" ) ;
+	
     this_will_crash () ;
     return 0 ;
 }

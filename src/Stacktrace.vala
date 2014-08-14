@@ -35,7 +35,27 @@ public class Stacktrace {
         }
     }
 
+	public enum Style {
+		RESET = 0,
+		BRIGHT =	1, 
+		DIM	=2,
+		UNDERLINE =3,
+		BLINK	=4,
+		REVERSE=	7,
+		HIDDEN	=8
+	}
 
+	public enum Colors {
+		BLACK =	0,
+		RED	=1,
+		GREEN	=2,
+		YELLOW=	3,
+		BLUE	=4,
+		MAGENTA=	5,
+		CYAN	=6,
+		WHITE=	7
+	}
+	
     public Gee.ArrayList<Frame> _frames = new Gee.ArrayList<Frame>();
 
     private  Frame first_vala = null ;
@@ -92,7 +112,7 @@ public class Stacktrace {
         max_file_name_length = 0 ;
 
         int size = Linux.backtrace (array, frame_count);
-        Linux.backtrace_symbols_fd (array, size, Posix.STDERR_FILENO);
+        //Linux.backtrace_symbols_fd (array, size, Posix.STDERR_FILENO);
         stdout.printf ("\n\n");
         # if VALA_0_26
         var strings = Linux.Backtrace.symbols ( array, size );
@@ -129,8 +149,8 @@ public class Stacktrace {
             }
             else
                 file_path = extract_file_path_from( str) ;
-            stdout.printf ("Building %d \n  . addr: [%s]\n  . ad_ : [%s]\n  . line: '%s'\n  . str : '%s'\n  . func: '%s'\n  . file: '%s'\n  . line: '%s'\n",
-                i, addr, a, file_line, str, func, file_path, l);
+            //stdout.printf ("Building %d \n  . addr: [%s]\n  . ad_ : [%s]\n  . line: '%s'\n  . str : '%s'\n  . func: '%s'\n  . file: '%s'\n  . line: '%s'\n",
+            //   i, addr, a, file_line, str, func, file_path, l);
 
             var frame = new Frame ( a, file_line, func, file_path, short_file_path  );
 
@@ -243,33 +263,59 @@ public class Stacktrace {
         return result;
     }
 
+	private string get_reset_code()
+	{
+		return "\x1b[0m" ;
+	}
+	
+	private string  get_color_code(Style attr, Colors fg, Colors bg)
+	{	
+		/* Command is the control command to the terminal */
+		var result = "%c[%d;%d;%dm".printf( 0x1B, (int)attr, (int)fg + 30, (int)bg + 40);
+		return result ;
+	}
+
     private string get_signal_name()
     {
         return "SIGABRT" ;
     }
-
+	
     private string get_printable_function (Frame frame)
     {
+		var result = "" ;
         if( frame.function == "" )
-            return "<unknown>" ;
-
-        return "'" + frame.function + "'" ;
+            result= "<unknown>" ;
+		else
+			result =  "'" + frame.function + "'" ;
+		
+        return get_color_code(Style.BRIGHT, Colors.WHITE, Colors.BLACK) + result + get_reset_code() ;
     }
 
     private string get_printable_line_number( Frame frame )
     {
         var path = frame.line_number ;
+        var result = "" ;
         if( path.length >= max_line_number_length )
-            return path ;
-         return path + string.nfill( max_line_number_length - path.length, ' ' );
+            result = path ;
+		else
+			result = path + string.nfill( max_line_number_length - path.length, ' ' );
+         return result;
     }
 
     private string get_printable_file_short_path( Frame frame )
     {
         var path = frame.file_short_path ;
+        var result = "" ;
+		var color = get_color_code(Style.BRIGHT, Colors.WHITE, Colors.BLACK) ;
         if( path.length >= max_file_name_length )
-            return path ;
-         return path + string.nfill( max_file_name_length - path.length, ' ' );
+            result = color+ path  + get_reset_code();
+         else
+         {
+			 result =  color + path + get_reset_code() ;
+         result =  result + string.nfill( max_file_name_length - path.length, ' ' );
+		
+		 }
+         return result ;
     }
 
     public void print ()
