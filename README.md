@@ -23,7 +23,7 @@ valac -g -X -rdynamic -o sample <your vala files>
 
 The output is :
 
-![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack-segv.png)
+![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigsegv.png)
 
 Samples
 ==================
@@ -35,20 +35,20 @@ To run, execute
 ./run_samples.sh
 ```
 
-[Null reference sample](/samples/error_sigsev.vala)
+[Null reference sample](/samples/error_sigsegv.vala)
 --------------------------------------------
 See screenshot above
 > Signal intercepted: `SIGSEV`
 
-[Uncaught error](/samples/error_sigabrt.vala) (causing `SIGABRT`)
+[Uncaught error](/samples/error_sigabrt.vala)
 --------------------------------------
-![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack-abrt.png)
+![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigabrt.png)
 
 > Signal intercepted: `SIGABRT`
 
-[Critical assert](/samples/error_sigtrap.vala) (causing `SIGTRAP`)
+[Critical assert](/samples/error_sigtrap.vala)
 ---------------------------------------
-To make your applicatio halts at the first `CRITICAL` trace, you must write: 
+To make your application halts at the first `CRITICAL` trace, you must write: 
 ```
 	int main (string[] args) {
 		Stacktrace.crash_on_critical ();
@@ -62,6 +62,6 @@ To make your applicatio halts at the first `CRITICAL` trace, you must write:
 
 ```
 
-![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack-trap.png)
+![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigtrap.png)
 
 > Signal intercepted: `SIGTRAP`
