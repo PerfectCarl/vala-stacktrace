@@ -49,7 +49,7 @@ See screenshot above
 [Critical assert](/samples/error_sigtrap.vala)
 ---------------------------------------
 To make your application halts at the first `CRITICAL` trace, you must write: 
-```
+```java
 	int main (string[] args) {
 		Stacktrace.crash_on_critical ();
 	    Stacktrace.register_handlers () ;
