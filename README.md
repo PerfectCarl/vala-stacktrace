@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Vala stracktrace displays the application stacktrace when your application crashes (yes, like all those other modern languages).
+This project displays the stacktrace when your vala application crashes (should it ever happen).
 
 Just add the following lines : 
 
@@ -16,7 +16,7 @@ int main (string[] args) {
 }
 ```
 
-And build your application with `-rdynamic` 
+... and build your application with `-rdynamic` 
 ```
 valac -g -X -rdynamic -o sample <your vala files>
 ```
@@ -25,8 +25,15 @@ The output is :
 
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack-segv.png)
 
-[Sample](/samples)
+Samples
 ==================
+[Samples](/samples) are provided. 
+
+To run, execute 
+
+```
+./run_samplessh
+```
 
 [Null reference sample](/samples/error_sigsev.vala)
 --------------------------------------------
