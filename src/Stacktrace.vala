@@ -64,6 +64,8 @@ public class Stacktrace {
 
     private int max_line_number_length = 0 ;
 
+	private ProcessSignal sig ;
+	
     public Gee.ArrayList<Frame> frames {
         get
         {
@@ -71,30 +73,23 @@ public class Stacktrace {
         }
     }
 
-    public Stacktrace()
+    public Stacktrace(ProcessSignal sig)
     {
+		this.sig = sig ;
         create_stacktrace ();
-    }
-
-    private string get_string (char* strings, int i)
-    {
-        var result = "";
-        while (strings[i] != 0) {
-            char c = strings[i];
-            result += "%c".printf (c);
-            i++;
-        }
-        return result;
     }
 
     private string get_module_name ()
     {
-        return "./samples/sample1" ;
+		var path = new char[1024] ;
+		Posix.readlink( "/proc/self/exe", path ) ;
+		string result = (string) path ; 
+        return result ;
     }
 
     private string extract_short_file_path (string file_path)
     {
-        var path = "/home/cran/Projects/vala-stacktrace" ;
+        var path = Environment.get_current_dir () ;
         var i = file_path.index_of( path ) ;
         if( i>=0 )
             return file_path.substring ( path.length, file_path.length - path.length ) ;
@@ -113,7 +108,6 @@ public class Stacktrace {
 
         int size = Linux.backtrace (array, frame_count);
         //Linux.backtrace_symbols_fd (array, size, Posix.STDERR_FILENO);
-        stdout.printf ("\n\n");
         # if VALA_0_26
         var strings = Linux.Backtrace.symbols ( array, size );
         # else
@@ -157,7 +151,6 @@ public class Stacktrace {
             if( first_vala == null && file_path.has_suffix(".vala"))
                 first_vala = frame ;
 
-
             if( short_file_path.length > max_file_name_length )
                 max_file_name_length = short_file_path.length ;
             if( l.length > max_line_number_length )
@@ -177,7 +170,7 @@ public class Stacktrace {
             if( end >= 0 )
             {
                 var result = line.substring ( start + 1, end - start - 1 );
-                return result;
+                return result.strip();
             }
         }
         return "";
@@ -190,9 +183,9 @@ public class Stacktrace {
         var start = str.index_of ( "(");
         if( start >= 0 )
         {
-            return str.substring (0, start ) ;
+            return str.substring (0, start ).strip() ;
         }
-        return str ;
+        return str.strip() ;
     }
 
     private string extract_file_path ( string line )
@@ -203,7 +196,7 @@ public class Stacktrace {
         if( start>=0 )
         {
             var result = line.substring (0, start );
-            return result;
+            return result.strip();
         }
         return "";
     }
@@ -216,7 +209,12 @@ public class Stacktrace {
         if( start>=0 )
         {
             var result = line.substring (start+1, line.length-start-1 );
-            return result;
+            var end = result.index_of ( "(") ;
+            if( end >=0)
+            {				
+				result = result.substring (0, end)  ;
+			}
+            return result.strip();
         }
         return "";
     }
@@ -232,7 +230,7 @@ public class Stacktrace {
             if( end >= 0 )
             {
                 var result = line.substring ( start + 1, end - start - 1 );
-                return result;
+                return result.strip();
             }
         }
         return "";
@@ -248,7 +246,6 @@ public class Stacktrace {
         }
         catch (Error e){
             error (e.message);
-            return "error " + e.message;
         }
     }
 
@@ -257,7 +254,7 @@ public class Stacktrace {
     // address : 0x007f80
     // output : /home/cran/Projects/noise/noise-perf-instant-search/tests/errors.vala:87
     string get_line ( string module, string address ) {
-        var cmd = "addr2line -e ./%s %s".printf ( module, address);
+        var cmd = "addr2line -e %s %s".printf ( module, address);
         var result = execute_command_sync_get_output ( cmd );
         result = result.replace ("\n", "");
         return result;
@@ -277,7 +274,7 @@ public class Stacktrace {
 
     private string get_signal_name()
     {
-        return "SIGABRT" ;
+        return sig.to_string() ;
     }
 	
     private string get_printable_function (Frame frame)
@@ -330,7 +327,7 @@ public class Stacktrace {
 
         stdout.printf(header);
         int i = 1 ;
-        foreach( var frame in frames )
+        foreach( var frame in _frames )
         {
 
             if( frame.function != "" )
@@ -375,10 +372,17 @@ public class Stacktrace {
     {
         Process.@signal (ProcessSignal.SEGV, handler);
         Process.@signal (ProcessSignal.ABRT, handler);
+        Process.@signal (ProcessSignal.TRAP, handler);
     }
 
+	public static void crash_on_critical ()
+	{
+		var variables = Environ.get () ;
+		Environ.set_variable (variables, "G_DEBUG" ,"fatal-criticals" ) ;
+	}
+	
     public static void handler (int sig) {
-        Stacktrace stack = new Stacktrace ();
+        Stacktrace stack = new Stacktrace ((ProcessSignal)sig);
         stack.print ();
         Process.exit (1);
     }
