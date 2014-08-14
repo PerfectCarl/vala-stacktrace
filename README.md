@@ -32,7 +32,7 @@ Samples
 To run, execute 
 
 ```
-./run_samplessh
+./run_samples.sh
 ```
 
 [Null reference sample](/samples/error_sigsev.vala)
