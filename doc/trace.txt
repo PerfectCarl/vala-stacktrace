@@ -1,0 +1,155 @@
+
+JAVA
+----
+Exception in thread "main" java.lang.NullPointerException
+        at com.example.myproject.Book.getTitle(Book.java:16)
+        at com.example.myproject.Author.getBookTitles(Author.java:25)
+        at com.example.myproject.Bootstrap.main(Bootstrap.java:14)
+
+RUBY
+----
+caller.rb:8:in `bar'
+caller.rb:12:in `baz'
+caller.rb:15:in `<main>'
+
+GDB
+---
+#0  strlen () at ../sysdeps/x86_64/strlen.S:106
+#1  0x00000000004023bf in this_will_blow_harder ()
+    at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/vala_file.vala:5
+#2  0x000000000040632b in other_module_do_it (self=0x616220)
+    at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/module/OtherModule.vala:10
+#3  0x0000000000402452 in namespace_someclass_exec (self=0x616200)
+    at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:7
+#4  0x0000000000402cb1 in this_will_blow ()
+    at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:14
+#5  0x0000000000402ce9 in _vala_main (args=0x7fffffffde78, args_length1=1)
+    at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:20
+#6  0x0000000000402d15 in main (argc=1, argv=0x7fffffffde78)
+    at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:17
+
+PROPOSED
+---
+An error occured (SIGABRT) in ./vala_file.vala, line 5 in 'this_will_blow_harder'
+
+    #0  /lib/x86_64-linux-gnu/libc.so.6   in strlen
+        at /lib/x86_64-linux-gnu/libc.so.6
+
+ *  #1  ./vala_file.vala     line 5       in 'this_will_blow_harder'
+        at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/vala_file.vala:5
+
+    #2  ./OtherModule.c      line 80      in 'other_module_do_it'
+        at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/module/OtherModule.vala:10
+    #3  ./errors.vala        line 7       in 'namespace_someclass_exec'
+        at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:7
+    #4  /errors.vala         line 11      in 'this_will_blow'
+        at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:14
+    #5  /errors.vala         line 21      in '_vala_main'
+        at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:20
+    #6  at /errors.c         line 396     in 'main'
+        at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:17
+
+PROPOSED
+--------
+
+An error occured (SIGABRT) in /errors.vala:227 function
+   ./errors.vala.c, line 2047
+    /lib/x86_64-linux-gnu/libc.so.6         - in 'strlen'                 (strlen+0x2a)
+-> ./errors.vala, line 227                  - in 'this_will_blow_harder'
+   ./module/OtherModule.vala.c, line 80     - in 'do_it'                  (other_module_do_it+0x2e)
+   ./errors.vala, line 217                  - in 'this_will_blow'
+
+Building 4
+  . addr: [0x404bb7]
+  . ad_ : [0x402d63]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/Stacktrace.c:1286
+  . str : ./errors() [0x404bb7]
+  . func:
+Building 5
+  . addr: [0x7fd7dd3e4000]
+  . ad_ : [00000000]
+  . line:
+  . str : /lib/x86_64-linux-gnu/libc.so.6(+0x37000) [0x7fd7dd3e4000]
+  . func:
+Building 6
+  . addr: [0x7fd7dd43693a]
+  . ad_ : [0x404bfd]
+  . line:
+  . str : /lib/x86_64-linux-gnu/libc.so.6(strlen+0x2a) [0x7fd7dd43693a]
+  . func: strlen
+Building 7
+  . addr: [0x4023bf]
+  . ad_ : [00000000]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/vala_file.vala:5
+  . str : ./errors(this_will_blow_harder+0x32) [0x4023bf]
+  . func: this_will_blow_harder
+Building 8
+  . addr: [0x406330]
+  . ad_ : [0x404bb7]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/OtherModule.c:80
+  . str : ./errors(other_module_do_it+0x2e) [0x406330]
+  . func: other_module_do_it
+Building 9
+  . addr: [0x402452]
+  . ad_ : [00000000]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:4
+  . str : ./errors(namespace_someclass_exec+0x56) [0x402452]
+  . func: namespace_someclass_exec
+Building 10
+  . addr: [0x402cb1]
+  . ad_ : [0xdd3e4000]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:11
+  . str : ./errors(this_will_blow+0x35) [0x402cb1]
+  . func: this_will_blow
+Building 11
+  . addr: [0x402cee]
+  . ad_ : [0x007fd7]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:21
+  . str : ./errors(_vala_main+0x20) [0x402cee]
+  . func: _vala_main
+Building 12
+  . addr: [0x402d1a]
+  . ad_ : [0xdd43693a]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.c:396
+  . str : ./errors(main+0x20) [0x402d1a]
+  . func: main
+Building 13
+  . addr: [0x7fd7dd3ceec5]
+  . ad_ : [0x007fd7]
+  . line:
+  . str : /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7fd7dd3ceec5]
+  . func: __libc_start_main
+Building 14
+  . addr: [0x4022c9]
+  . ad_ : [0x4023bf]
+  . line:
+  . str : ./errors() [0x4022c9]
+  . func:
+
+  . func: this_will_blow
+Building 11
+  . addr: [0x402cee]
+  . ad_ : [0x007f0b]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.vala:27
+  . str : ./errors(_vala_main+0x20) [0x402cee]
+  . func: _vala_main
+Building 12
+  . addr: [0x402d1a]
+  . ad_ : [0x1ade093a]
+  . line: /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/errors.c:416
+  . str : ./errors(main+0x20) [0x402d1a]
+  . func: main
+Building 13
+  . addr: [0x7f0b1ad78ec5]
+  . ad_ : [0x007f0b]
+  . line:
+  . str : /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5) [0x7f0b1ad78ec5]
+  . func: __libc_start_main
+Building 14
+  . addr: [0x4022c9]
+  . ad_ : [0x402c91]
+  . line:
+  . str : ./errors() [0x4022c9]
+  . func:
+
+
