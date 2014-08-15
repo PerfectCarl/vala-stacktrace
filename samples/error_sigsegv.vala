@@ -12,6 +12,8 @@ private void this_will_crash ()
 {
     var some = new Namespace.SomeClass() ;
     some.exec () ;
+    message ("I haven't crashed") ;
+
 }
 
 int main (string[] args) {

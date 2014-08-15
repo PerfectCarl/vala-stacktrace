@@ -1,14 +1,14 @@
 private void this_will_crash ()
 {
-    FileStream stream = FileStream.open ("/do/not/exist/file.vala", "r");
-	assert (stream != null);
-    
+	var hi = "johnny !" ;
+	assert (hi == "wiseau");
+    message ("I haven't crashed") ;
 }
 
 int main (string[] args) {
     Stacktrace.register_handlers () ;
     
-	stdout.printf("  This program will crash with an assert error!\n" ) ;
+	stdout.printf("  This program will crash with a failed assert!\n" ) ;
 	
     this_will_crash () ;
     return 0 ;

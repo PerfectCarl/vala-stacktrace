@@ -45,7 +45,7 @@ public class Stacktrace {
         HIDDEN  = 8
     }
 
-    public enum Colors {
+    public enum Color {
         BLACK = 0,
         RED     = 1,
         GREEN   = 2,
@@ -65,6 +65,11 @@ public class Stacktrace {
     private int max_line_number_length = 0;
 
     private ProcessSignal sig;
+
+
+    public static Color highlight_color { get; set; default = Color.WHITE; }
+
+    public static Color error_background { get; set; default = Color.RED; }
 
     public Gee.ArrayList<Frame> frames {
         get
@@ -262,19 +267,18 @@ public class Stacktrace {
     private string get_reset_code ()
     {
         //return get_color_code (Style.RESET, Colors.WHITE, Colors.BLACK);
-		
         return "\x1b[0m";
     }
 
     private string get_reset_style ()
     {
-        return get_color_code (Style.DIM, Colors.WHITE, background_color);
+        return get_color_code (Style.DIM, highlight_color, background_color);
     }
 
-    private string  get_color_code (Style attr, Colors fg, Colors bg = background_color)
+    private string  get_color_code (Style attr, Color fg, Color bg = background_color)
     {
         /* Command is the control command to the terminal */
-		if( bg == Colors.BLACK)
+		if( bg == Color.BLACK)
 			return "%c[%d;%dm".printf ( 0x1B, (int)attr, (int)fg + 30);
 		else
 			return "%c[%d;%d;%dm".printf ( 0x1B, (int)attr, (int)fg + 30, (int)bg + 40);
@@ -285,6 +289,10 @@ public class Stacktrace {
         return sig.to_string ();
     }
 
+	private string get_highlight_code () {
+		return get_color_code (Style.BRIGHT, highlight_color) ;
+	}
+	
     private string get_printable_function (Frame frame, int padding = 0)
     {
         var result = "";
@@ -297,7 +305,7 @@ public class Stacktrace {
                 s = string.nfill ( count, ' ');
             result =  "'" + frame.function + "'" + s;
         }
-        return get_color_code (Style.BRIGHT, Colors.WHITE) + result + get_reset_code ();
+        return get_highlight_code () + result + get_reset_code ();
     }
 
     private string get_printable_line_number ( Frame frame )
@@ -315,7 +323,7 @@ public class Stacktrace {
     {
         var path = frame.file_short_path;
         var result = "";
-        var color = get_color_code (Style.BRIGHT, Colors.WHITE);
+        var color = get_highlight_code ();
         if( path.length >= max_file_name_length && !pad)
             result = color + path  + get_reset_style ();
         else {
@@ -325,13 +333,13 @@ public class Stacktrace {
         return result;
     }
 
-    Colors background_color = Colors.BLACK;
+    Color background_color = Color.BLACK;
     int title_length = 0;
 
     private string get_printable_title ()
     {
-        var c = get_color_code (Style.DIM, Colors.WHITE, Colors.RED);
-        var color = get_color_code (Style.BRIGHT, Colors.WHITE, Colors.RED);
+        var c = get_color_code (Style.DIM, highlight_color, background_color);
+        var color = get_highlight_code ();
 
         var result = "%sAn error occured %s(%s)%s".printf (
             c,
@@ -345,7 +353,7 @@ public class Stacktrace {
     private string get_reason ()
     {
         //var c = get_reset_code();
-        var color = get_color_code (Style.BRIGHT, Colors.WHITE, Colors.BLACK);
+        var color = get_highlight_code ();
         if( sig == ProcessSignal.TRAP ) {
             return "The reason is likely %san uncaught error%s".printf (
                 color, get_reset_code ());
@@ -363,7 +371,7 @@ public class Stacktrace {
 
     public void print ()
     {
-        background_color = Colors.RED;
+        background_color = error_background;
         var header = "%s\n\n".printf (
             get_printable_title ());
         if( first_vala != null ) {
@@ -377,7 +385,7 @@ public class Stacktrace {
                             first_vala.file_short_path.length;
         }
         stdout.printf (header);
-        background_color = Colors.BLACK;
+        background_color = Color.BLACK;
         var reason = get_reason ();
         stdout.printf ( "   %s.\n\n",
             reason );
@@ -389,21 +397,19 @@ public class Stacktrace {
             {
                 //     #2  ./OtherModule.c      line 80      in 'other_module_do_it'
                 //         at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/module/OtherModule.vala:10
-                var str = " %s  #%d  %s   line %s    in %s\n";
-                background_color = Colors.BLACK;
+                var str = " %s  #%d  %s    line %s    in %s\n";
+                background_color = Color.BLACK;
                 var lead = " ";
-                var ending1 = "";
                 var function_padding = 0;
                 if( frame == first_vala )
                 {
                     lead = "*";
-                    background_color = Colors.RED;
-                    ending1 = string.nfill (66 - title_length, ' ' );
+                    background_color = error_background;
                     function_padding = 22;
                 }
                 if( frame.line_number == "" )
                 {
-                    str = " %s  #%d  <unknown>  %s  in %s\n";
+                    str = " %s  #%d  <unknown>  %s   in %s\n";
                     str = str.printf (
                         lead,
                         i,
