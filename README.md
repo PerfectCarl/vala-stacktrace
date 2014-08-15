@@ -40,22 +40,46 @@ To compile and run the samples, execute
 See screenshot above
 > Signal intercepted: `SIGSEV`
 
-[Uncaught error](/samples/error_sigabrt.vala)
+[Uncaught error](/samples/error_sigtrap.vala)
 --------------------------------------
+Uncaught errors are logged with `CRITICAL` level also you need to add `Stacktrace.crash_on_critical ()` if you want your application to halt: 
+```java
+int main (string[] args) {
+	// Same as G_DEBUG=fatal-criticals in your environment variables
+	Stacktrace.crash_on_critical ();
+	Stacktrace.register_handlers () ;
+	
+	stdout.printf("  This program will crash with an uncaught error which will be logged as CRITICAL!\n" ) ;
+	
+	this_will_crash () ;
+	return 0 ;
+}
+
+```
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigtrap.png)
 
 > Signal intercepted: `SIGTRAP`
 
-[Critical assert](/samples/error_sigtrap.vala)
+[Critical assert](/samples/error_sigabrt.vala)
 ---------------------------------------
-To make your application halts at the first `CRITICAL` trace, just add `Stacktrace.crash_on_critical ()`: 
+
+
+![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigabrt.png)
+
+> Signal intercepted: `SIGABRT`
+
+[Setting colors](/samples/error_colors.vala)
+---------------------------------------
+You can set the background and highlight color with `BLACK`, `BLUE`,`CYAN`,`GREEN`,`MAGENTA`,`RED`,`WHITE` and `YELLOW`.
+
 ```java
 	int main (string[] args) {
-		// Same as G_DEBUG=fatal-criticals
-		Stacktrace.crash_on_critical ();
+		// Soothing, uh?
+		Stacktrace.highlight_color = Stacktrace.Color.GREEN ;
+		Stacktrace.error_background = Stacktrace.Color.WHITE ;
 		Stacktrace.register_handlers () ;
 		
-		stdout.printf("  This program will crash with an assert error!\n" ) ;
+		stdout.printf("  This program will crash with fancy colors!\n" ) ;
 		
 		this_will_crash () ;
 		return 0 ;
@@ -63,6 +87,6 @@ To make your application halts at the first `CRITICAL` trace, just add `Stacktra
 
 ```
 
-![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigabrt.png)
+![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_colors.png)
 
 > Signal intercepted: `SIGABRT`
