@@ -5,14 +5,14 @@ valac -g -X -rdynamic --pkg linux --pkg gee-0.8 -o ./samples/sample_sigsegv ./sa
 ./samples/sample_sigsegv
 
 # Uncaught error
-rm ./samples/sample_sigabrt
-valac -g -X -rdynamic --pkg linux --pkg gee-0.8 -o ./samples/sample_sigabrt ./samples/error_sigabrt.vala ./src/Stacktrace.vala
-./samples/sample_sigabrt
-
-# Critical assert
 rm ./samples/sample_sigtrap
 valac -g -X -rdynamic --pkg linux --pkg gee-0.8 -o ./samples/sample_sigtrap ./samples/error_sigtrap.vala ./src/Stacktrace.vala
 ./samples/sample_sigtrap
+
+# Critical assert
+rm ./samples/sample_sigabrt
+valac -g -X -rdynamic --pkg linux --pkg gee-0.8 -o ./samples/sample_sigabrt ./samples/error_sigabrt.vala ./src/Stacktrace.vala
+./samples/sample_sigabrt
 
 # Configure colors
 rm ./samples/sample_colors
