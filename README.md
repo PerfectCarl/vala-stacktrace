@@ -44,6 +44,15 @@ See screenshot above
 --------------------------------------
 Uncaught errors are logged with `CRITICAL` level also you need to add `Stacktrace.crash_on_critical ()` if you want your application to halt: 
 ```java
+private void this_will_crash ()
+{
+	string content = "" ;
+	size_t size = 0 ;
+	// The compiler warns us: unhandled error `GLib.FileError'
+	FileUtils.get_contents ("/do/not/exist/file.vala",out content, out size);
+	message ("I haven't crashed") ;
+}
+
 int main (string[] args) {
 	// Same as G_DEBUG=fatal-criticals in your environment variables
 	Stacktrace.crash_on_critical ();
@@ -62,7 +71,24 @@ int main (string[] args) {
 
 [Critical assert](/samples/error_sigabrt.vala)
 ---------------------------------------
+```java
+private void this_will_crash ()
+{
+	var hi = "johnny !" ;
+	assert (hi == "wiseau");
+	message ("I haven't crashed") ;
+}
 
+int main (string[] args) {
+	Stacktrace.register_handlers () ;
+	
+	stdout.printf("  This program will crash with a failed assert!\n" ) ;
+	
+	this_will_crash () ;
+	return 0 ;
+}
+
+```
 
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigabrt.png)
 
@@ -89,4 +115,3 @@ You can set the background and highlight color with `BLACK`, `BLUE`,`CYAN`,`GREE
 
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_colors.png)
 
-> Signal intercepted: `SIGABRT`
