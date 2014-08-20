@@ -115,3 +115,5 @@ You can set the background and highlight color with `BLACK`, `BLUE`,`CYAN`,`GREE
 
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_colors.png)
 
+[Changelog](CHANGELOG.md)
+-------------------------
