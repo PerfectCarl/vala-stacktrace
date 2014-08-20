@@ -1,4 +1,6 @@
 
+// Version 0.8
+
 public class Stacktrace {
 
     public class Frame
@@ -66,7 +68,8 @@ public class Stacktrace {
 
     private ProcessSignal sig;
 
-
+	public static bool hide_installed_libraries { get; set; default = false ; }
+	
     public static Color highlight_color { get; set; default = Color.WHITE; }
 
     public static Color error_background { get; set; default = Color.RED; }
@@ -91,19 +94,60 @@ public class Stacktrace {
         string result = (string) path;
         return result;
     }
+    
+	// TODO CARL convert this piece of code to vala conventions
+	public static string get_relative_path(string p_fullDestinationPath, string p_startPath)
+	{
+			
+		string[] l_startPathParts = p_startPath.split("/");
+		string[] l_destinationPathParts = p_fullDestinationPath.split("/");
+
+		int l_sameCounter = 0;
+		while ((l_sameCounter < l_startPathParts.length) &&
+			(l_sameCounter < l_destinationPathParts.length) &&
+			l_startPathParts[l_sameCounter] == l_destinationPathParts[l_sameCounter])
+		{
+			l_sameCounter++;
+		}
+
+		if (l_sameCounter == 0)
+		{
+			return p_fullDestinationPath; // There is no relative link.
+		}
+
+		StringBuilder l_builder = new StringBuilder();
+		for (int i = l_sameCounter; i < l_startPathParts.length; i++)
+		{
+			l_builder.append("../" );
+		}
+
+		for (int i = l_sameCounter; i < l_destinationPathParts.length; i++)
+		{
+			l_builder.append(l_destinationPathParts[i] + "/");
+		}
+
+		// CARL l_builder.Length--;
+		// Remove the last /
+		var result = l_builder.str ;
+		result = result.substring( 0, result.length -1) ;
+		return result ;
+	}
+
 
     private string extract_short_file_path (string file_path)
     {
         var path = Environment.get_current_dir ();
-        var i = file_path.index_of ( path );
+        /*var i = file_path.index_of ( path );
         if( i>=0 )
             return file_path.substring ( path.length, file_path.length - path.length );
-        return file_path;
+        return file_path; */
+        var result = get_relative_path( file_path, path ) ;
+        return result ; 
     }
 
     private void create_stacktrace () {
         int frame_count = 100;
-        int skipped_frames_count = 4;
+        int skipped_frames_count = 5;
 
         void*[] array = new void*[frame_count];
 
@@ -308,14 +352,18 @@ public class Stacktrace {
         return get_highlight_code () + result + get_reset_code ();
     }
 
-    private string get_printable_line_number ( Frame frame )
+    private string get_printable_line_number ( Frame frame, bool pad = true )
     {
         var path = frame.line_number;
         var result = "";
-        if( path.length >= max_line_number_length )
-            result = path;
+        var color = get_highlight_code ();
+        if( path.length >= max_line_number_length || !pad )
+            result = color + path  + get_reset_style ();
         else
-            result = path + string.nfill ( max_line_number_length - path.length, ' ' );
+        {
+            result =  color + path + get_reset_style ();
+            result =  result + string.nfill ( max_line_number_length - path.length, ' ' );
+		}
         return result;
     }
 
@@ -324,7 +372,7 @@ public class Stacktrace {
         var path = frame.file_short_path;
         var result = "";
         var color = get_highlight_code ();
-        if( path.length >= max_file_name_length && !pad)
+        if( path.length >= max_file_name_length || !pad)
             result = color + path  + get_reset_style ();
         else {
             result =  color + path + get_reset_style ();
@@ -378,7 +426,7 @@ public class Stacktrace {
             header = "%s in %s, line %s in %s\n".printf (
                 get_printable_title (),
                 get_printable_file_short_path ( first_vala, false),
-                first_vala.line_number,
+                get_printable_line_number(first_vala, false),
                 get_printable_function (first_vala)+get_reset_code());
             title_length += first_vala.line_number.length +
                             first_vala.function.length +
@@ -392,8 +440,11 @@ public class Stacktrace {
         int i = 1;
         foreach( var frame in _frames )
         {
-
-            if( frame.function != "" )
+			var show_frame = frame.function != "" || frame.file_path.has_suffix(".vala") || frame.file_path.has_suffix(".c") ;
+			if( hide_installed_libraries )
+				show_frame = show_frame &&  frame.file_short_path != "" ;
+				
+            if( show_frame )
             {
                 //     #2  ./OtherModule.c      line 80      in 'other_module_do_it'
                 //         at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/module/OtherModule.vala:10
@@ -447,7 +498,7 @@ public class Stacktrace {
         //Environ.set_variable (variables, "G_DEBUG", "fatal-criticals" );
         Log.set_always_fatal (LogLevelFlags.LEVEL_CRITICAL);
     }
-
+    
     public static void handler (int sig) {
         Stacktrace stack = new Stacktrace ((ProcessSignal)sig);
         stack.print ();
