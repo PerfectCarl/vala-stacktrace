@@ -1,5 +1,5 @@
 
-// Version 0.8
+// Version 0.9
 
 public class Stacktrace {
 
@@ -65,6 +65,10 @@ public class Stacktrace {
     private int max_file_name_length = 0;
 
     private int max_line_number_length = 0;
+    
+    private bool is_all_function_name_blank = true ; 
+
+    private bool is_all_file_name_blank = true ; 
 
     private ProcessSignal sig;
 
@@ -154,7 +158,9 @@ public class Stacktrace {
         _frames.clear ();
         first_vala = null;
         max_file_name_length = 0;
-
+        is_all_function_name_blank = true ; 
+        is_all_file_name_blank = true ; 
+        
         int size = Linux.backtrace (array, frame_count);
         //Linux.backtrace_symbols_fd (array, size, Posix.STDERR_FILENO);
         # if VALA_0_26
@@ -193,7 +199,13 @@ public class Stacktrace {
                 file_path = extract_file_path_from ( str);
             //stdout.printf ("Building %d \n  . addr: [%s]\n  . ad_ : [%s]\n  . line: '%s'\n  . str : '%s'\n  . func: '%s'\n  . file: '%s'\n  . line: '%s'\n",
             //   i, addr, a, file_line, str, func, file_path, l);
-
+            
+            if( func != "" && file_path.has_suffix(".vala") && is_all_function_name_blank )
+                is_all_function_name_blank = false ; 
+            
+            if( short_file_path  != "" && is_all_file_name_blank )
+                is_all_file_name_blank = false ; 
+                    
             var frame = new Frame ( a, file_line, func, file_path, short_file_path  );
 
             if( first_vala == null && file_path.has_suffix (".vala"))
@@ -362,7 +374,7 @@ public class Stacktrace {
         else
         {
             result =  color + path + get_reset_style ();
-            result =  result + string.nfill ( max_line_number_length - path.length, ' ' );
+            result =  string.nfill ( max_line_number_length - path.length, ' ' ) + result ;
 		}
         return result;
     }
@@ -420,8 +432,9 @@ public class Stacktrace {
     public void print ()
     {
         background_color = error_background;
-        var header = "%s\n\n".printf (
-            get_printable_title ());
+        var header = "%s%s\n".printf ( get_printable_title (),
+            get_reset_code());
+ 
         if( first_vala != null ) {
             header = "%s in %s, line %s in %s\n".printf (
                 get_printable_title (),
@@ -435,8 +448,25 @@ public class Stacktrace {
         stdout.printf (header);
         background_color = Color.BLACK;
         var reason = get_reason ();
-        stdout.printf ( "   %s.\n\n",
-            reason );
+        stdout.printf ( "   %s.\n", reason );
+        
+        // Has the user forgot to compile with -g -X -rdynamic flag ?   
+        if( is_all_file_name_blank ) 
+        {
+            var advice = "   %sNote%s: no file path and line numbers can be retrieved. Are you sure %syou added -g -X -rdynamic%s to valac command line?\n" ; 
+            var color = get_highlight_code (); 
+            stdout.printf (advice, color, get_reset_code(), color, get_reset_code() ) ;
+        } 
+               
+        // Has the user forgot to compile with rdynamic flag ?
+        if( is_all_function_name_blank && !is_all_file_name_blank)
+        {
+            var advice = "   %sNote%s: no vala function name can be retrieved. Are you sure %syou added -X -rdynamic%s to valac command line?\n" ; 
+            var color = get_highlight_code (); 
+            stdout.printf (advice, color, get_reset_code(), color, get_reset_code() ) ;
+        }
+       
+        stdout.printf("\n") ;
         int i = 1;
         foreach( var frame in _frames )
         {
@@ -461,11 +491,13 @@ public class Stacktrace {
                 if( frame.line_number == "" )
                 {
                     str = " %s  #%d  <unknown>  %s   in %s\n";
+                    var func_name = get_printable_function (frame)  ;
+                    var fill_len = int.max(max_file_name_length + max_line_number_length - 1, 0 );
                     str = str.printf (
                         lead,
                         i,
-                        string.nfill ( max_file_name_length + max_line_number_length - 1, ' ' ),
-                        get_printable_function (frame) );
+                        string.nfill ( fill_len, ' ' ),
+                        func_name);
                 } else {
                     str = str.printf (
                         lead,
@@ -475,7 +507,6 @@ public class Stacktrace {
                         get_printable_function (frame, function_padding) );
                 }
                 stdout.printf ( str);
-
                 str = "        at %s\n".printf (
                     frame.file_path);
                 stdout.printf ( str);
