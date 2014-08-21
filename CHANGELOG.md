@@ -1,6 +1,7 @@
 v0.9
   - add warning when the -g -X compilation flags were missing
   - fixed line number formatting
+  - added line number to complete file path
 
 v0.8
   - highlight line number
