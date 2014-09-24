@@ -55,7 +55,10 @@ private void this_will_crash ()
 
 int main (string[] args) {
 	// Same as G_DEBUG=fatal-criticals in your environment variables
-	Stacktrace.crash_on_critical ();
+	// The other values are : 
+	//  - PRINT_STACKTRACE: a full stacktrace is displayed
+	//  - IGNORE: nothing is done when SIGTRAP is recieved 
+	Stacktrace.critical_handling = Stacktrace.CriticalHandler.CRASH;
 	Stacktrace.register_handlers () ;
 	
 	stdout.printf("  This program will crash with an uncaught error which will be logged as CRITICAL!\n" ) ;
@@ -101,8 +104,8 @@ You can set the background and highlight color with `BLACK`, `BLUE`,`CYAN`,`GREE
 ```java
 	int main (string[] args) {
 		// Soothing, uh?
-		Stacktrace.highlight_color = Stacktrace.Color.GREEN ;
-		Stacktrace.error_background = Stacktrace.Color.WHITE ;
+		Stacktrace.default_highlight_color = Stacktrace.Color.GREEN ;
+		Stacktrace.default_error_background = Stacktrace.Color.WHITE ;
 		Stacktrace.register_handlers () ;
 		
 		stdout.printf("  This program will crash with fancy colors!\n" ) ;
