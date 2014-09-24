@@ -7,8 +7,8 @@ private void this_will_crash ()
 
 int main (string[] args) {
 	// Soothing, uh?
-	Stacktrace.highlight_color = Stacktrace.Color.GREEN ;
-	Stacktrace.error_background = Stacktrace.Color.WHITE ;
+	Stacktrace.default_highlight_color = Stacktrace.Color.GREEN ;
+	Stacktrace.default_error_background = Stacktrace.Color.WHITE ;
     Stacktrace.register_handlers () ;
 
 	stdout.printf("  This program will crash with fancy colors!\n" ) ;

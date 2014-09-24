@@ -47,6 +47,13 @@ public class Stacktrace {
         HIDDEN  = 8
     }
 
+    public enum CriticalHandler
+    {
+        IGNORE,
+        PRINT_STACKTRACE,
+        CRASH
+    }
+    
     public enum Color {
         BLACK = 0,
         RED     = 1,
@@ -73,10 +80,14 @@ public class Stacktrace {
     private ProcessSignal sig;
 
 	public static bool hide_installed_libraries { get; set; default = false ; }
-	
-    public static Color highlight_color { get; set; default = Color.WHITE; }
 
-    public static Color error_background { get; set; default = Color.RED; }
+    public static Color default_highlight_color { get; set; default = Color.WHITE; }
+
+    public static Color default_error_background { get; set; default = Color.RED; }
+
+    public Color highlight_color { get; set; default = Color.WHITE; }
+
+    public Color error_background { get; set; default = Color.RED; }
 
     public Gee.ArrayList<Frame> frames {
         get
@@ -85,9 +96,20 @@ public class Stacktrace {
         }
     }
 
-    public Stacktrace(ProcessSignal sig)
+    public Stacktrace(GLib.ProcessSignal sig=GLib.ProcessSignal.TTOU)
     {
         this.sig = sig;
+        // The stacktrace is used likely to understand the inner
+        // working of the app so we displays everything.
+        if( is_custom) {
+			hide_installed_libraries = false ;
+			error_background = Color.BLUE ;
+		}
+        else
+        {
+            error_background = default_error_background ;
+            highlight_color = default_highlight_color ; 
+        }
         create_stacktrace ();
     }
 
@@ -149,9 +171,19 @@ public class Stacktrace {
         return result ; 
     }
 
+    public bool is_custom {
+        get
+        {
+            return sig == ProcessSignal.TTOU ;
+        }
+    }
+    
     private void create_stacktrace () {
         int frame_count = 100;
         int skipped_frames_count = 5;
+		// Stacktrace not due to a crash
+		if( is_custom )
+			skipped_frames_count = 3 ; 
 
         void*[] array = new void*[frame_count];
 
@@ -161,14 +193,16 @@ public class Stacktrace {
         is_all_function_name_blank = true ; 
         is_all_file_name_blank = true ; 
         
-        int size = Linux.backtrace (array, frame_count);
+        
         //Linux.backtrace_symbols_fd (array, size, Posix.STDERR_FILENO);
         # if VALA_0_26
-        var strings = Linux.Backtrace.symbols ( array, size );
+            var size = Linux.Backtrace.@get ( array );
+            var strings = Linux.Backtrace.symbols ( array );
         # else
+            int size = Linux.backtrace (array, frame_count);
             unowned string[] strings = Linux.backtrace_symbols (array, size);
-        // Needed because of some weird bug
-        strings.length = size;
+            // Needed because of some weird bug
+            strings.length = size;
         # endif
 
         int[] addresses = (int[])array;
@@ -240,6 +274,9 @@ public class Stacktrace {
     {
         if( str =="" )
             return "";
+        if( str.index_of("??") >= 0)
+            //result = result.substring (4, line.length - 4 );
+            stdout.printf ("ERR2?? : %s\n", str ) ;
         var start = str.index_of ( "(");
         if( start >= 0 )
         {
@@ -250,12 +287,17 @@ public class Stacktrace {
 
     private string extract_file_path ( string line )
     {
-        if( line == "" )
+        var result = line ; 
+        if( result == "" )
             return "";
-        var start = line.index_of ( ":");
+        // For some reason, the file name can starts with ??:0
+        if( result.index_of("??") >= 0)
+            //result = result.substring (4, line.length - 4 );
+            stdout.printf ("ERR1?? : %s\n", line ) ;
+        var start = result.index_of ( ":");
         if( start>=0 )
         {
-            var result = line.substring (0, start );
+            result = result.substring (0, start );
             return result.strip ();
         }
         return "";
@@ -352,8 +394,11 @@ public class Stacktrace {
     private string get_printable_function (Frame frame, int padding = 0)
     {
         var result = "";
-        if( frame.function == "" )
+        var is_unknown  = false ;
+        if( frame.function == "" ) {
             result = "<unknown>";
+            is_unknown = true ;
+        }
         else {
             var s = "";
             int count = padding - get_signal_name ().length;
@@ -361,7 +406,10 @@ public class Stacktrace {
                 s = string.nfill ( count, ' ');
             result =  "'" + frame.function + "'" + s;
         }
-        return get_highlight_code () + result + get_reset_code ();
+        if( is_unknown )
+            return result + get_reset_code ();
+        else
+            return get_highlight_code () + result + get_reset_code ();
     }
 
     private string get_printable_line_number ( Frame frame, bool pad = true )
@@ -468,12 +516,16 @@ public class Stacktrace {
        
         stdout.printf("\n") ;
         int i = 1;
+        bool has_displayed_first_vala = false ;
         foreach( var frame in _frames )
         {
 			var show_frame = frame.function != "" || frame.file_path.has_suffix(".vala") || frame.file_path.has_suffix(".c") ;
-			if( hide_installed_libraries )
+			if( hide_installed_libraries && has_displayed_first_vala)
 				show_frame = show_frame &&  frame.file_short_path != "" ;
-				
+
+			// Ignore glib tracing code if displayed before the first vala frame
+			if( (frame.function == "g_logv" || frame.function == "g_log") && !has_displayed_first_vala)
+				show_frame = false ;
             if( show_frame )
             {
                 //     #2  ./OtherModule.c      line 80      in 'other_module_do_it'
@@ -484,10 +536,12 @@ public class Stacktrace {
                 var function_padding = 0;
                 if( frame == first_vala )
                 {
+					has_displayed_first_vala = true ;
                     lead = "*";
                     background_color = error_background;
                     function_padding = 22;
                 }
+                var l_number ="" ;
                 if( frame.line_number == "" )
                 {
                     str = " %s  #%d  <unknown>  %s   in %s\n";
@@ -505,10 +559,11 @@ public class Stacktrace {
                         get_printable_file_short_path ( frame),
                         get_printable_line_number (frame),
                         get_printable_function (frame, function_padding) );
+                        l_number = ":"+ frame.line_number;
                 }
                 stdout.printf ( str);
-                str = "        at %s\n".printf (
-                    frame.file_path);
+                str = "        at %s%s\n".printf (
+                    frame.file_path, l_number);
                 stdout.printf ( str);
 
                 i++;
@@ -518,21 +573,34 @@ public class Stacktrace {
 
     public static void register_handlers ()
     {
+        Log.set_always_fatal (LogLevelFlags.LEVEL_CRITICAL);
+        
         Process.@signal (ProcessSignal.SEGV, handler);
-        Process.@signal (ProcessSignal.ABRT, handler);
         Process.@signal (ProcessSignal.TRAP, handler);
+        if( critical_handling != CriticalHandler.IGNORE )
+            Process.@signal (ProcessSignal.ABRT, handler);
     }
 
-    public static void crash_on_critical ()
-    {
-        //var variables = Environ.get ();
-        //Environ.set_variable (variables, "G_DEBUG", "fatal-criticals" );
-        Log.set_always_fatal (LogLevelFlags.LEVEL_CRITICAL);
-    }
+    public static CriticalHandler critical_handling  { get ; set ; default = CriticalHandler.PRINT_STACKTRACE ;}
+    
+    /*{
+        set {
+            _critical_handling = value ;
+            if( value == CriticalHandler.CRASH ) 
+            //var variables = Environ.get ();
+            //Environ.set_variable (variables, "G_DEBUG", "fatal-criticals" );
+            Log.set_always_fatal (LogLevelFlags.LEVEL_CRITICAL);
+        }
+        get {
+        }
+
+    }*/
     
     public static void handler (int sig) {
         Stacktrace stack = new Stacktrace ((ProcessSignal)sig);
         stack.print ();
-        Process.exit (1);
+        if( sig != ProcessSignal.TRAP ||
+            (sig != ProcessSignal.TRAP && critical_handling == CriticalHandler.CRASH))
+            Process.exit (1) ;
     }
 }

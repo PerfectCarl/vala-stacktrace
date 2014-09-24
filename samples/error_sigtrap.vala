@@ -10,7 +10,7 @@ private void this_will_crash ()
 
 int main (string[] args) {
 	// Same as G_DEBUG=fatal-criticals in your environment variables
-	Stacktrace.crash_on_critical ();
+	Stacktrace.critical_handling = Stacktrace.CriticalHandler.CRASH;
     Stacktrace.register_handlers () ;
     
 	stdout.printf("  This program will crash with an uncaught error which will be logged as CRITICAL!\n" ) ;
