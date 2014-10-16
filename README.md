@@ -5,10 +5,11 @@ Just have `Stacktrace` register the handlers  :
 
 ```java
 int main (string[] args) {
+    // register the handler
     Stacktrace.register_handlers () ;
 	  
     stdout.printf("  This program will crash !\n" ) ;
-    // Null deferencing
+    // The next call will crash because it uses a null reference
     this_will_crash () ;
     return 0 ;
 }
@@ -36,11 +37,11 @@ To compile and run the samples, execute
 ```
 ./run_samples.sh
 ```
-# Usage
+## Usage
 
-# How does it work?
+## How does it work?
 
-# Build instructions
+## Build instructions
 
-# [Changelog](CHANGELOG.md)
+## [Changelog](CHANGELOG.md)
 
