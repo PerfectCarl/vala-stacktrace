@@ -24,10 +24,18 @@ Your application will display a complete stacktrace before it crashes :
 
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigsegv.png)
 
+## Documentation 
+
  * [Usage] (#usage)
  * [How does it work?] (#how-does-it-work)
  * [Samples] (#samples) 
  * [Changelog] (#changelog)
+
+## Usage
+
+## How does it work?
+
+## Build instructions
 
 # Samples
 [Samples](/samples) are provided. 
@@ -37,11 +45,6 @@ To compile and run the samples, execute
 ```
 ./run_samples.sh
 ```
-## Usage
-
-## How does it work?
-
-## Build instructions
 
 ## [Changelog](CHANGELOG.md)
 
