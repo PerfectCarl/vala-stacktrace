@@ -1,10 +1,11 @@
 
-// Version 0.9
+// Version 1.0
 
 public class Stacktrace {
 
     public class Frame
     {
+        // Address used by addr2line
         public string address  { get; private set; default = ""; }
 
         public string line { get; private set; default = ""; }
@@ -215,8 +216,15 @@ public class Stacktrace {
             string str = strings[i];
 
             string a = "%#08x".printf ( address );
-            string addr = extract_address (str);
-            string file_line = get_line ( module, addr );
+            var addr = extract_address (str);
+            var full_line = get_line ( module, addr );
+            var lines = full_line.split("\n");
+            string func_line = "" ;
+            if( lines.length >0 )
+                func_line = lines[0] ;
+            string file_line = "";
+            if( lines.length >1 )
+                file_line = lines[1] ;
             if( file_line == "??:0" || file_line == "??:?")
                 file_line = "";
             string func = extract_function_name (str);
@@ -226,13 +234,15 @@ public class Stacktrace {
             string l = "";
             if( file_line != "" )
             {
+                if( func == "" )
+                    func = extract_function_name_from_line (func_line) ;
                 file_path = extract_file_path (file_line);
                 short_file_path  = extract_short_file_path (file_path);
                 l = extract_line (file_line);
             } else
                 file_path = extract_file_path_from ( str);
-            //stdout.printf ("Building %d \n  . addr: [%s]\n  . ad_ : [%s]\n  . line: '%s'\n  . str : '%s'\n  . func: '%s'\n  . file: '%s'\n  . line: '%s'\n",
-            //   i, addr, a, file_line, str, func, file_path, l);
+                //stdout.printf ("Building %d \n  . addr: [%s]\n  . ad_ : [%s]\n  . full_line: '%s'\n  . file_line: '%s'\n  . func_line: '%s'\n  . str : '%s'\n  . func: '%s'\n  . file: '%s'\n  . line: '%s'\n",
+                //i, addr, a, full_line, file_line, func_line, str, func, file_path, l);
             
             if( func != "" && file_path.has_suffix(".vala") && is_all_function_name_blank )
                 is_all_function_name_blank = false ; 
@@ -240,7 +250,7 @@ public class Stacktrace {
             if( short_file_path  != "" && is_all_file_name_blank )
                 is_all_file_name_blank = false ; 
                     
-            var frame = new Frame ( a, file_line, func, file_path, short_file_path  );
+            var frame = new Frame ( addr, file_line, func, file_path, short_file_path  );
 
             if( first_vala == null && file_path.has_suffix (".vala"))
                 first_vala = frame;
@@ -270,13 +280,18 @@ public class Stacktrace {
         return "";
     }
 
+    private string extract_function_name_from_line ( string line )
+    {
+        return line.strip();
+    }
+    
     private string extract_file_path_from ( string str)
     {
         if( str =="" )
             return "";
-        if( str.index_of("??") >= 0)
+        /*if( str.index_of("??") >= 0)
             //result = result.substring (4, line.length - 4 );
-            stdout.printf ("ERR2?? : %s\n", str ) ;
+            stdout.printf ("ERR2?? : %s\n", str ) ; */
         var start = str.index_of ( "(");
         if( start >= 0 )
         {
@@ -290,10 +305,12 @@ public class Stacktrace {
         var result = line ; 
         if( result == "" )
             return "";
+        if( result == "??:0??:0")
+            return "" ;
         // For some reason, the file name can starts with ??:0
-        if( result.index_of("??") >= 0)
-            //result = result.substring (4, line.length - 4 );
-            stdout.printf ("ERR1?? : %s\n", line ) ;
+        if( result.has_prefix("??:0"))
+            result = result.substring (4, line.length - 4 );
+            // stdout.printf ("ERR1?? : %s\n", line ) ;
         var start = result.index_of ( ":");
         if( start>=0 )
         {
@@ -305,12 +322,15 @@ public class Stacktrace {
 
     public static string extract_line ( string line )
     {
-        if( line == "" )
+        var result = line ;
+        if( result == "" )
             return "";
-        var start = line.index_of ( ":");
+        if( result.has_prefix("??:0"))
+            result = result.substring (4, line.length - 4 );
+        var start = result.index_of ( ":");
         if( start>=0 )
         {
-            var result = line.substring (start + 1, line.length - start - 1 );
+            result = result.substring (start + 1, line.length - start - 1 );
             var end = result.index_of ( "(");
             if( end >=0)
             {
@@ -356,9 +376,9 @@ public class Stacktrace {
     // address : 0x007f80
     // output : /home/cran/Projects/noise/noise-perf-instant-search/tests/errors.vala:87
     string get_line ( string module, string address ) {
-        var cmd = "addr2line -e %s %s".printf ( module, address);
+        var cmd = "addr2line -f -e %s %s".printf ( module, address);
         var result = execute_command_sync_get_output ( cmd );
-        result = result.replace ("\n", "");
+        //result = result.replace ("\n", "");
         return result;
     }
 
@@ -396,7 +416,7 @@ public class Stacktrace {
         var result = "";
         var is_unknown  = false ;
         if( frame.function == "" ) {
-            result = "<unknown>";
+            result = "<unknown> " + frame.address;
             is_unknown = true ;
         }
         else {
