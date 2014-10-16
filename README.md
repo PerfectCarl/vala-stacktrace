@@ -33,7 +33,7 @@ Your application will display a complete stacktrace before it crashes :
 
 ## Usage
 
-The library format the stacktrace using colors `[default_highlight_color](/doc/api.md#default_highlight_color)` and `[default_error_background](/doc/api.md#default_error_background)` hiding the system libraries (libc, etc) for which there are usually no information available (that feature can be enabled via `[hide_installed_libraries](/doc/api.md#hide_installed_libraries)`.
+The library format the stacktrace using colors [`default_highlight_color`](/doc/api.md#default_highlight_color) and [`default_error_background`](/doc/api.md#default_error_background) hiding the system libraries (libc, etc) for which there are usually no information available (that feature can be enabled via [`hide_installed_libraries`](/doc/api.md#hide_installed_libraries)`.
 
 The library has two use cases:
  * crash interception: when a vala application crashes it emits a signal depending on the nature of error. Those signals are intercepted and before the application exits, the application stacktrace is displayed
