@@ -27,3 +27,5 @@ int main (string[] args) {
 
 ```
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigtrap.png)
+
+> Signal intercepted: `SIGTRAP`
