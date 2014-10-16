@@ -1,5 +1,4 @@
-Introduction
-============
+# Introduction
 
 This project displays the stacktrace when your vala application crashes (should it ever happen).
 
@@ -25,8 +24,7 @@ The output is :
 
 ![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigsegv.png)
 
-Samples
-==================
+# Samples
 [Samples](/samples) are provided. 
 
 To compile and run the samples, execute 
@@ -34,89 +32,11 @@ To compile and run the samples, execute
 ```
 ./run_samples.sh
 ```
+# Usage
 
-[Null reference sample](/samples/error_sigsegv.vala)
---------------------------------------------
-See screenshot above
-> Signal intercepted: `SIGSEV`
+# How does it work?
 
-[Uncaught error](/samples/error_sigtrap.vala)
---------------------------------------
-Uncaught errors are logged with `CRITICAL` level also you need to add `Stacktrace.crash_on_critical ()` if you want your application to halt: 
-```java
-private void this_will_crash ()
-{
-	string content = "" ;
-	size_t size = 0 ;
-	// The compiler warns us: unhandled error `GLib.FileError'
-	FileUtils.get_contents ("/do/not/exist/file.vala",out content, out size);
-	message ("I haven't crashed") ;
-}
+# How to build?
 
-int main (string[] args) {
-	// Same as G_DEBUG=fatal-criticals in your environment variables
-	// The other values are : 
-	//  - PRINT_STACKTRACE: a full stacktrace is displayed
-	//  - IGNORE: nothing is done when SIGTRAP is recieved 
-	Stacktrace.critical_handling = Stacktrace.CriticalHandler.CRASH;
-	Stacktrace.register_handlers () ;
-	
-	stdout.printf("  This program will crash with an uncaught error which will be logged as CRITICAL!\n" ) ;
-	
-	this_will_crash () ;
-	return 0 ;
-}
+# [Changelog](CHANGELOG.md)
 
-```
-![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigtrap.png)
-
-> Signal intercepted: `SIGTRAP`
-
-[Critical assert](/samples/error_sigabrt.vala)
----------------------------------------
-```java
-private void this_will_crash ()
-{
-	var hi = "johnny !" ;
-	assert (hi == "wiseau");
-	message ("I haven't crashed") ;
-}
-
-int main (string[] args) {
-	Stacktrace.register_handlers () ;
-	
-	stdout.printf("  This program will crash with a failed assert!\n" ) ;
-	
-	this_will_crash () ;
-	return 0 ;
-}
-
-```
-
-![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_sigabrt.png)
-
-> Signal intercepted: `SIGABRT`
-
-[Setting colors](/samples/error_colors.vala)
----------------------------------------
-You can set the background and highlight color with `BLACK`, `BLUE`,`CYAN`,`GREEN`,`MAGENTA`,`RED`,`WHITE` and `YELLOW`.
-
-```java
-	int main (string[] args) {
-		// Soothing, uh?
-		Stacktrace.default_highlight_color = Stacktrace.Color.GREEN ;
-		Stacktrace.default_error_background = Stacktrace.Color.WHITE ;
-		Stacktrace.register_handlers () ;
-		
-		stdout.printf("  This program will crash with fancy colors!\n" ) ;
-		
-		this_will_crash () ;
-		return 0 ;
-	}
-
-```
-
-![](https://raw.githubusercontent.com/PerfectCarl/vala-stacktrace/master/doc/stack_colors.png)
-
-[Changelog](CHANGELOG.md)
--------------------------
