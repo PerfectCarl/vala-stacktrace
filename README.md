@@ -48,7 +48,7 @@ The following signals are intercepted:
 | [SIGTRAP][3] | Uncaught error         | Try adding a `throw` in your code to handle this error properly |
 
 [1]: /doc/sigabrt.md
-[2]: /doc/sigsegv.md
+[2]: /doc/sigsev.md
 [3]: /doc/sigtrap.md
 
 
