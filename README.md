@@ -33,7 +33,14 @@ Your application will display a complete stacktrace before it crashes :
 
 ## Usage
 
+The library can be used: 
+
+
 ## How does it work?
+
+The library registers handlers for the `SIGABRT`, `SIGSEV` and `SIGTRAP` signals. It processes the stacktrace symbols provided by [Linux.Backtrace.symbols](http://valadoc.org/#!api=linux/Linux.Backtrace.symbols) and retreive the file name, line number and function name using the symbols and [addr2line](http://linux.die.net/man/1/addr2line).
+
+> Note: it means that your application will spawn a synchronuous external processus. 
 
 ## Build instructions
 
