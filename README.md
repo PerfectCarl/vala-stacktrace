@@ -60,7 +60,7 @@ The library registers handlers for the `SIGABRT`, `SIGSEV` and `SIGTRAP` signals
 
 ## Build instructions
 
-# Samples
+## Samples
 [Samples](/samples) are provided. 
 
 To compile and run the samples, execute 
