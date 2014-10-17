@@ -15,9 +15,9 @@ int main (string[] args) {
 }
 ```
 
-... and build your application with `-rdynamic` 
+... and build your application with `-X -rdynamic` and required dependencies
 ```
-valac -g -X -rdynamic -o sample <your vala files>
+valac -g -X -rdynamic --pkg linux --pkg gee-0.8  -o sample <your vala files>
 ```
 
 Your application will display a complete stacktrace before it crashes :
@@ -56,16 +56,22 @@ The following signals are intercepted:
 
 The library registers handlers for the `SIGABRT`, `SIGSEV` and `SIGTRAP` signals. 
 
-It processes the stacktrace symbols provided by [Linux.Backtrace.symbols](http://valadoc.org/#!api=linux/Linux.Backtrace.symbols) and retreive the file name, line number and function name using the symbols and calling [addr2line](http://linux.die.net/man/1/addr2line) *multiple times*.
+It processes the stacktrace symbols provided by [Linux.Backtrace.symbols](http://valadoc.org/#!api=linux/Linux.Backtrace.symbols) and retreive the file name, line number and function name using the symbols and calling [addr2line](http://linux.die.net/man/1/addr2line) **multiple times**.
 
-> Note: it means that your application will spawn a synchronuous external processes. 
+> Note: it means that your application will spawn synchronuous external processes. 
 
-## Build instructions
+
+This library is [Apache licensed](http://www.apache.org/licenses/LICENSE-2.0) and has the following vala dependencies: 
+  - linux
+  - gee-0.8
 
 ## Samples
-[Samples](/samples) are provided. 
+[Samples](/samples) are provided for a wide variety of use cases: 
+  - [SIGABRT][1] : failed critical assert
+  - 
 
-To compile and run the samples, execute 
+
+To compile and run all the samples, execute 
 
 ```
 ./run_samples.sh
