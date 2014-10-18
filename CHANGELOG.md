@@ -4,7 +4,9 @@ v1.0
   - fix the ??:00 bug
   - unknown methods are not highlighted anymore
   - display the method name from addr2line
-  - add a cmake build
+  - clean up and format code 
+  - add sample
+  - add documentation
 
 v0.9
   - add warning when the -g -X compilation flags were missing
