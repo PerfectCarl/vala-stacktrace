@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2014 PerfectCarl - https://github.com/PerfectCarl/vala-stacktrace
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-/* History 
- *  - Version 1.0 : Oct, 18 2014 
- *        . initial version 
- */       
+/* History
+ *  - Version 1.1 :
+ *        . Support debugging in multiple .so
+ *  - Version 1.0 : Oct, 18 2014
+ *        . initial version
+ *        . Header not displaying an error for user created stacktrace
+ *        . Change spacing
+ */
 
 public class Stacktrace {
 
@@ -94,6 +98,8 @@ public class Stacktrace {
     private bool is_all_file_name_blank = true;
 
     private ProcessSignal sig;
+
+    public static bool enabled { get;set;default = true;}
 
     public static bool hide_installed_libraries { get;set;default = false;}
 
@@ -180,6 +186,89 @@ public class Stacktrace {
             return sig == ProcessSignal.TTOU;
         }
     }
+    // input : '/home/cran/Documents/Projects/elementary/noise/instant-beta/build/core/libnoise-core.so.0(noise_job_repository_create_job+0x309) [0x7ff60a021e69]'
+    // ouput: 0x309
+    private int extract_base_address (string line) {
+        int result = 0 ;
+        var start = line.last_index_of ("+");
+        if (start >= 0) {
+            var end = line.last_index_of (")");
+            if( end > start ) {
+                var text = line.substring (start+3,end-start-3) ;
+                text.scanf("%x",  &result);
+            }
+        }
+        return result ;
+    }
+
+    private void process_info_for_file (string full_line, string str ) {
+        func = "" ;
+        file_path = "";
+        short_file_path = "";
+        l = "";
+        file_line = "";
+        func_line = "";
+
+        var lines = full_line.split ("\n");
+
+        if (lines.length > 0)
+            func_line = lines[0];
+
+        if (lines.length > 1)
+            file_line = lines[1];
+        if (file_line == "??:0" || file_line == "??:?")
+            file_line = "";
+        func = extract_function_name (str);
+
+        file_path = "";
+        short_file_path = "";
+        l = "";
+        if (file_line != "") {
+            if (func == "")
+                func = extract_function_name_from_line (func_line);
+            file_path = extract_file_path (file_line);
+            short_file_path = extract_short_file_path (file_path);
+            l = extract_line (file_line);
+        }
+    }
+
+    string func = "" ;
+    string file_path = "";
+    string short_file_path = "";
+    string l = "";
+    string file_line = "";
+    string func_line = "";
+
+    private void process_info_from_lib (string file_path) {
+        var cmd2 = "nm %s".printf(file_path) ;
+        var addr1_s = execute_command_sync_get_output (cmd2) ;
+        MatchInfo info ;
+        try {
+            Regex regex = new Regex ("\\n[^ ]* T "+func);
+
+            if( regex.match (addr1_s, 0, out info) )
+            {
+                while( info.matches() ){
+                    var lll = info.fetch(0) ;
+                    //stdout.printf ( "lll '%s'\n", lll ) ;
+                    addr1_s = lll.substring(0, lll.index_of(" ")) ;
+                    info.next();
+                }
+            }
+        } catch (RegexError e)
+        {
+            critical( "Error while processing regex %s", e.message ) ;
+        }
+        //stdout.printf ("addr1_s %s\n", addr1_s) ;
+        int addr1 = 0 ;
+        addr1_s.scanf("%x",  &addr1);
+        if( addr1 != 0 ) {
+            int addr2 = extract_base_address (str) ;
+            string addr3 = "%#08x".printf (addr1+addr2);
+            var new_full_line = process_line (file_path, addr3);
+            process_info_for_file (new_full_line, str ) ;
+        }
+    }
 
     private void create_stacktrace () {
         int frame_count = 100;
@@ -196,8 +285,6 @@ public class Stacktrace {
         is_all_function_name_blank = true;
         is_all_file_name_blank = true;
 
-
-        // Linux.backtrace_symbols_fd (array, size, Posix.STDERR_FILENO);
         #if VALA_0_26
         var size = Linux.Backtrace.@get (array);
         var strings = Linux.Backtrace.symbols (array);
@@ -208,41 +295,26 @@ public class Stacktrace {
         strings.length = size;
         #endif
 
-        //int[] addresses = (int[])array;
+        int[] addresses = (int[])array;
         string module = get_module_name ();
         // First ones are the handler
         for (int i = skipped_frames_count ; i < size ; i++) {
-            // var str = strings[i] ;
-            //int address = addresses[i];
+            int address = addresses[i];
             string str = strings[i];
-
-            // string a = "%#08x".printf (address);
             var addr = extract_address (str);
-            var full_line = process_line (module, addr);
-            var lines = full_line.split ("\n");
-            string func_line = "";
-            if (lines.length > 0)
-                func_line = lines[0];
-            string file_line = "";
-            if (lines.length > 1)
-                file_line = lines[1];
-            if (file_line == "??:0" || file_line == "??:?")
-                file_line = "";
-            string func = extract_function_name (str);
 
-            string file_path = "";
-            string short_file_path = "";
-            string l = "";
-            if (file_line != "") {
-                if (func == "")
-                    func = extract_function_name_from_line (func_line);
-                file_path = extract_file_path (file_line);
-                short_file_path = extract_short_file_path (file_path);
-                l = extract_line (file_line);
-            } else
+            var full_line = process_line (module, addr);
+            process_info_for_file( full_line, str) ;
+            if (file_line == "") {
                 file_path = extract_file_path_from (str);
-            // stdout.printf ("Building %d \n  . addr: [%s]\n  . ad_ : [%s]\n  . full_line: '%s'\n  . file_line: '%s'\n  . func_line: '%s'\n  . str : '%s'\n  . func: '%s'\n  . file: '%s'\n  . line: '%s'\n",
-            // i, addr, a, full_line, file_line, func_line, str, func, file_path, l);
+
+            }
+            if( file_path.has_suffix(".so.0")) {
+                process_info_from_lib (file_path) ;
+            }
+
+            //stdout.printf ("Building %d \n  . addr: [%s]\n  . full_line: '%s'\n  . file_line: '%s'\n  . func_line: '%s'\n  . str : '%s'\n  . func: '%s'\n  . file: '%s'\n  . line: '%s'\n",
+             //i, addr, full_line, file_line, func_line, str, func, file_path, l);
 
             if (func != "" && file_path.has_suffix (".vala") && is_all_function_name_blank)
                 is_all_function_name_blank = false;
@@ -348,11 +420,12 @@ public class Stacktrace {
         try {
             int exitCode;
             string std_out;
-            Process.spawn_command_line_sync (cmd, out std_out, null, out exitCode);
+            string std_err;
+            Process.spawn_command_line_sync (cmd, out std_out, out std_err, out exitCode);
             return std_out;
         }
         catch (Error e) {
-            error (e.message);
+            error ("Error while executing '%s': %s".printf(cmd,e.message));
         }
     }
 
@@ -364,7 +437,7 @@ public class Stacktrace {
     string process_line (string module, string address) {
         var cmd = "addr2line -f -e %s %s".printf (module, address);
         var result = execute_command_sync_get_output (cmd);
-        // result = result.replace ("\n", "");
+        //stdout.printf( "CMD %s\n", cmd) ;
         return result;
     }
 
@@ -445,11 +518,19 @@ public class Stacktrace {
         var c = get_color_code (Style.DIM, highlight_color, background_color);
         var color = get_highlight_code ();
 
-        var result = "%sAn error occured %s(%s)%s".printf (
-            c,
-            color,
-            get_signal_name (),
-            get_reset_style ());
+        var result = "" ;
+
+        if( is_custom)
+            result = "%sA function was called in %s".printf (
+                c,
+                get_reset_style ());
+        else
+            result = "%sAn error occured %s(%s)%s".printf (
+                c,
+                color,
+                get_signal_name (),
+                get_reset_style ());
+
         title_length = get_signal_name ().length;
         return result;
     }
@@ -469,7 +550,7 @@ public class Stacktrace {
             return "The reason is likely %sa null reference being used%s".printf (
                 color, get_reset_code ());
         }
-        return "Unknown reason.";
+        return "Unknown reason";
     }
 
     public void print () {
@@ -489,8 +570,10 @@ public class Stacktrace {
         }
         stdout.printf (header);
         background_color = Color.BLACK;
-        var reason = get_reason ();
-        stdout.printf ("   %s.\n", reason);
+        if( !is_custom) {
+            var reason = get_reason ();
+            stdout.printf ("   %s.\n", reason);
+        }
 
         // Has the user forgot to compile with -g -X -rdynamic flag ?
         if (is_all_file_name_blank) {
@@ -520,7 +603,7 @@ public class Stacktrace {
             if (show_frame) {
                 // #2  ./OtherModule.c      line 80      in 'other_module_do_it'
                 // at /home/cran/Projects/noise/noise-perf-instant-search/tests/errors/module/OtherModule.vala:10
-                var str = " %s  #%d  %s    line %s    in %s\n";
+                var str = " %s  #%d  %s    line %s in %s\n";
                 background_color = Color.BLACK;
                 var lead = " ";
                 var function_padding = 0;
@@ -532,7 +615,7 @@ public class Stacktrace {
                 }
                 var l_number = "";
                 if (frame.line_number == "") {
-                    str = " %s  #%d  <unknown>  %s   in %s\n";
+                    str = " %s  #%d  <unknown>  %s in %s\n";
                     var func_name = get_printable_function (frame);
                     var fill_len = int.max (max_file_name_length + max_line_number_length - 1, 0);
                     str = str.printf (
@@ -584,6 +667,8 @@ public class Stacktrace {
        }*/
 
     public static void handler (int sig) {
+        if( !enabled)
+            return ;
         Stacktrace stack = new Stacktrace ((ProcessSignal) sig);
         stack.print ();
         if (sig != ProcessSignal.TRAP ||
