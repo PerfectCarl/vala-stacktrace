@@ -4,6 +4,7 @@
 //File History:
 //    - 0.1 : initial release
 //    - 0.2 : refactor to support apps
+//    - 0.3 : members are internal
 
 namespace Build {
 
