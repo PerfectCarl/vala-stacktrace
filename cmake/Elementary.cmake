@@ -7,9 +7,9 @@
 #    - 0.4 : misc fixes
 #    - 0.5 : support shared libraries
 #    - 0.6 : support cli apps. Support C_OPTIONS
-#    - 0.7 : refactoring the cmke project structure
 
 # TODO * fix po file generation
+# . test libs/apps/cli with fo files
 # TODO fix run-passwd and other vapi related cases
 # TODO compute .h folder from .c paths
 # TODO is SOURCE_PATH required?
@@ -21,6 +21,7 @@
 # TODO add VALA_DEFINES
 # TODO force the people to have a data/${target}.desktop and install it
 # TODO PKGDATADIR and DATADIR always needed?
+# TODO include ${CMAKE_CURRENT_SOURCE_DIR}/vapi/ to vapidir
 
 find_package (PkgConfig)
 
@@ -39,7 +40,7 @@ endif()
 
 set (SOURCE_PATHS "")
 
-# project(elementary_build)
+#project(elementary_build)
 
 macro(build_elementary_plug)
     parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;PLUG_CATEGORY;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;C_OPTIONS" "" ${ARGN})
@@ -95,6 +96,10 @@ endmacro()
 macro(build_elementary_app)
     parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;C_OPTIONS" "" ${ARGN})
 
+    set (DATADIR "")
+    set (PKGDATADIR "")
+    set (GETTEXT_PACKAGE "")
+
     prepare_elementary (
         BINARY_NAME
             ${ARGS_BINARY_NAME}
@@ -135,6 +140,10 @@ endmacro()
 
 macro(build_elementary_cli)
     parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;C_OPTIONS" "" ${ARGN})
+
+    set (DATADIR "")
+    set (PKGDATADIR "")
+    set (GETTEXT_PACKAGE "")
 
     prepare_elementary (
         BINARY_NAME
@@ -185,9 +194,9 @@ macro(build_elementary_library)
         message( FATAL_ERROR "The value LINKING must be either static or shared.")
     endif()
 
-    set (DATADIR "${CMAKE_INSTALL_FULL_LIBDIR}/switchboard")
-    set (PKGDATADIR "${DATADIR}/${ARGS_PLUG_CATEGORY}/${ARGS_BINARY_NAME}")
-    set (GETTEXT_PACKAGE "${ARGS_BINARY_NAME}-plug")
+    set (DATADIR "")
+    set (PKGDATADIR "")
+    set (GETTEXT_PACKAGE "")
 
     # configure_file (${CMAKE_SOURCE_DIR}/core/${CORE_LIBRARY_NAME}.pc.cmake ${CMAKE_BINARY_DIR}/core/${CORE_LIBRARY_NAME}.pc)
     prepare_elementary (
@@ -292,7 +301,7 @@ macro(prepare_elementary)
         message ("Error, you must provide a SOURCE_PATH argument")
     endif()
 
-    # add_subdirectory (${ARGS_SOURCE_PATH} ${CMAKE_BINARY_DIR}/${ARGS_BINARY_NAME})
+    #add_subdirectory (${ARGS_SOURCE_PATH} ${CMAKE_BINARY_DIR}/${ARGS_BINARY_NAME})
 
     if(ARGS_VERSION)
         set (ELEM_VERSION ${ARGS_VERSION})
@@ -417,14 +426,18 @@ macro(prepare_elementary)
             # TODO : deprecated ??
             --thread
             # TODO
-            --vapidir=${CMAKE_CURRENT_SOURCE_DIR}/vapi/
+            --vapidir=${CMAKE_BINARY_DIR}
             ${ARGS_VALA_OPTIONS}
+            --vapi-comments
         # For libraries
         GENERATE_VAPI
             ${LIBRARY_NAME}
         GENERATE_HEADER
             ${LIBRARY_NAME}
         )
+        set( ELEM_VAPI_DIR ${CMAKE_BINARY_DIR})
+        message( "ELEM_VAPI_DIR ${ELEM_VAPI_DIR}")
+
     else()
         message ("TWO ${ARGS_BINARY_NAME}")
         # Precompile vala files
@@ -437,7 +450,7 @@ macro(prepare_elementary)
             # TODO : deprecated ??
             --thread
             # TODO
-            --vapidir=${CMAKE_CURRENT_SOURCE_DIR}/vapi/
+            --vapidir=${CMAKE_BINARY_DIR}
             ${ARGS_VALA_OPTIONS}
 
         )
