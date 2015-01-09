@@ -239,7 +239,7 @@ public class Stacktrace {
     string file_line = "";
     string func_line = "";
 
-    private void process_info_from_lib (string file_path) {
+    private void process_info_from_lib (string file_path, string str) {
         var cmd2 = "nm %s".printf(file_path) ;
         var addr1_s = execute_command_sync_get_output (cmd2) ;
         MatchInfo info ;
@@ -310,7 +310,7 @@ public class Stacktrace {
 
             }
             if( file_path.has_suffix(".so.0")) {
-                process_info_from_lib (file_path) ;
+                process_info_from_lib (file_path, str) ;
             }
 
             //stdout.printf ("Building %d \n  . addr: [%s]\n  . full_line: '%s'\n  . file_line: '%s'\n  . func_line: '%s'\n  . str : '%s'\n  . func: '%s'\n  . file: '%s'\n  . line: '%s'\n",
