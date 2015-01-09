@@ -5,21 +5,22 @@
 #    - 0.2 : support schemas
 #    - 0.3 : support app
 #    - 0.4 : misc fixes
-#    - 0.5 : support libraries
+#    - 0.5 : support shared libraries
+#    - 0.6 : support cli apps. Support C_OPTIONS
+#    - 0.7 : refactoring the cmke project structure
 
-# TODO Deal with build type
 # TODO * fix po file generation
 # TODO fix run-passwd and other vapi related cases
 # TODO compute .h folder from .c paths
 # TODO is SOURCE_PATH required?
 # TODO * deal with thread library
 # TODO handle PREFIX
-# TODO * handle librabries
+# TODO Deal with build type
 # TODO install desktop icons and other data files
 # TODO generate debian files?
-# TODO add VALA_DEFINES and C_OPTIONS
+# TODO add VALA_DEFINES
 # TODO force the people to have a data/${target}.desktop and install it
-# TODO support cli
+# TODO PKGDATADIR and DATADIR always needed?
 
 find_package (PkgConfig)
 
@@ -38,8 +39,10 @@ endif()
 
 set (SOURCE_PATHS "")
 
+# project(elementary_build)
+
 macro(build_elementary_plug)
-    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;PLUG_CATEGORY;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS" "" ${ARGN})
+    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;PLUG_CATEGORY;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;C_OPTIONS" "" ${ARGN})
 
     if( NOT ARGS_PLUG_CATEGORY)
         message( FATAL_ERROR "You must specify a PLUG_CATEGORY: personal, hardware, network or system.")
@@ -75,6 +78,8 @@ macro(build_elementary_plug)
              ${ARGS_VALA_OPTIONS}
         CONFIG_NAME
             config_plug.vala.cmake
+        C_OPTIONS
+             ${ARGS_C_OPTIONS}
     )
 
     add_library (${ARGS_BINARY_NAME} MODULE ${VALA_C} ${C_FILES})
@@ -88,7 +93,7 @@ macro(install_elementary_plug ELEM_NAME)
 endmacro()
 
 macro(build_elementary_app)
-    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS" "" ${ARGN})
+    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;C_OPTIONS" "" ${ARGN})
 
     prepare_elementary (
         BINARY_NAME
@@ -113,6 +118,8 @@ macro(build_elementary_app)
              ${ARGS_VALA_OPTIONS}
         CONFIG_NAME
             config_app.vala.cmake
+        C_OPTIONS
+             ${ARGS_C_OPTIONS}
     )
 
     add_executable (${ARGS_BINARY_NAME} ${VALA_C} ${C_FILES})
@@ -126,8 +133,49 @@ macro(install_elementary_app ELEM_NAME)
     install (TARGETS ${ELEM_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
 endmacro()
 
+macro(build_elementary_cli)
+    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;C_OPTIONS" "" ${ARGN})
+
+    prepare_elementary (
+        BINARY_NAME
+            ${ARGS_BINARY_NAME}
+        TITLE
+            ${ARGS_TITLE}
+        VERSION
+            ${ARGS_VERSION}
+        SOURCE_PATH
+            ${ARGS_SOURCE_PATH}
+        VALA_FILES
+            ${ARGS_VALA_FILES}
+        C_FILES
+            ${ARGS_C_FILES}
+        C_DEFINES
+            ${ARGS_C_DEFINES}
+        PACKAGES
+            ${ARGS_PACKAGES}
+        SCHEMA
+             ${ARGS_SCHEMA}
+        VALA_OPTIONS
+             ${ARGS_VALA_OPTIONS}
+        CONFIG_NAME
+            config_cli.vala.cmake
+        C_OPTIONS
+             ${ARGS_C_OPTIONS}
+    )
+
+    add_executable (${ARGS_BINARY_NAME} ${VALA_C} ${C_FILES})
+    target_link_libraries (${ARGS_BINARY_NAME} ${DEPS_LIBRARIES})
+
+    install_elementary_cli (${ARGS_BINARY_NAME})
+endmacro()
+
+macro(install_elementary_cli ELEM_NAME)
+    #install (TARGETS ${CMAKE_PROJECT_NAME} DESTINATION bin)
+    #install (TARGETS ${ELEM_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+endmacro()
+
 macro(build_elementary_library)
-    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOVERSION;LINKING;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS" "" ${ARGN})
+    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOVERSION;LINKING;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;C_OPTIONS" "" ${ARGN})
 
     if( NOT ARGS_LINKING)
         message( FATAL_ERROR "You must specify a LINKING: static or shared.")
@@ -167,6 +215,8 @@ macro(build_elementary_library)
             config_lib.vala.cmake
         LINKING
             ${ARGS_LINKING}
+        C_OPTIONS
+             ${ARGS_C_OPTIONS}
     )
 
     # Set for the variables substitution in the pc file
@@ -196,13 +246,12 @@ macro(build_elementary_library)
 endmacro()
 
 macro(install_elementary_library ELEM_NAME BUILD_TYPE)
-
-    if (BUILD_TYPE STREQUAL "shared" )
+    if (${BUILD_TYPE} STREQUAL "shared" )
         install (TARGETS ${ELEM_NAME} DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})
         # Install lib stuffs
         install (FILES ${CMAKE_BINARY_DIR}/${ELEM_NAME}.pc              DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig/)
         install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${ELEM_NAME}.vapi    DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/vala/vapi/)
-        install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${ELEM_NAME}.deps    DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/vala/vapi/)
+        install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${ELEM_NAME}.deps    DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/vala/vapi/)
         install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${ELEM_NAME}.h       DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}/${ELEM_NAME}/)
     endif ()
 
@@ -227,7 +276,7 @@ macro(build_translations)
 endmacro()
 
 macro(prepare_elementary)
-    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;CONFIG_NAME;LINKING" "" ${ARGN})
+    parse_arguments(ARGS "BINARY_NAME;TITLE;VERSION;SOURCE_PATH;VALA_FILES;C_FILES;PACKAGES;C_DEFINES;SCHEMA;VALA_OPTIONS;CONFIG_NAME;LINKING;C_OPTIONS" "" ${ARGN})
 
     if(ARGS_BINARY_NAME)
         project (${ARGS_BINARY_NAME})
@@ -235,7 +284,15 @@ macro(prepare_elementary)
         message( FATAL_ERROR "You must specify a BINARY_NAME")
     endif()
 
-    #add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/${ARGS_BINARY_NAME})
+    # TODO handle the case where the source is not precised
+    if(ARGS_SOURCE_PATH)
+        list(APPEND SOURCE_PATHS ${ARGS_SOURCE_PATH})
+        list(REMOVE_DUPLICATES SOURCE_PATHS)
+    else()
+        message ("Error, you must provide a SOURCE_PATH argument")
+    endif()
+
+    # add_subdirectory (${ARGS_SOURCE_PATH} ${CMAKE_BINARY_DIR}/${ARGS_BINARY_NAME})
 
     if(ARGS_VERSION)
         set (ELEM_VERSION ${ARGS_VERSION})
@@ -252,14 +309,6 @@ macro(prepare_elementary)
     # Add schema
     if(ARGS_SCHEMA)
         add_schema (${ARGS_SCHEMA})
-    endif()
-
-    # TODO handle the case where the source is not precised
-    if(ARGS_SOURCE_PATH)
-        list(APPEND SOURCE_PATHS ${ARGS_SOURCE_PATH})
-        list(REMOVE_DUPLICATES SOURCE_PATHS)
-    else()
-        message ("Error, you must provide a SOURCE_PATH argument")
     endif()
 
     # Checking vala version
@@ -300,6 +349,11 @@ macro(prepare_elementary)
         add_definitions ("-D${def}")
     endforeach()
 
+    # Add the C options
+    foreach(opt ${ARGS_C_OPTIONS})
+        add_definitions ("${opt}")
+    endforeach()
+
     # Handle the packges
     set (PACKAGES "")
     set (COMPLETE_DIST_PACKAGES "")
@@ -320,7 +374,10 @@ macro(prepare_elementary)
             list(APPEND checked_packages "${pkg}")
         endif()
 
-        if(NOT pkg STREQUAL "run-passwd")
+        # Posix and linux are vala only packages without
+        # c libraries -> they should be excluded from the pc and
+        # deps files
+        if(NOT pkg STREQUAL "run-passwd" AND NOT pkg STREQUAL "linux" AND NOT pkg STREQUAL "posix")
             set(COMPLETE_DIST_PACKAGES " ${COMPLETE_DIST_PACKAGES} ${pkg}")
             set(ELEM_DEPS_PACKAGES  "${ELEM_DEPS_PACKAGES}${pkg}\n")
         endif()
@@ -331,8 +388,7 @@ macro(prepare_elementary)
             set(PACKAGES ${PACKAGES} ${pkg})
         endif()
     endforeach()
-    message ("COMPLETE_DIST_PACKAGES ${COMPLETE_DIST_PACKAGES}")
-    message ("ELEM_DEPS_PACKAGES ${ELEM_DEPS_PACKAGES}")
+
     if( checked_packages )
         pkg_check_modules (DEPS REQUIRED ${checked_packages})
         add_definitions (${DEPS_CFLAGS})
@@ -348,27 +404,46 @@ macro(prepare_elementary)
     endif()
 
     if (ARGS_LINKING)
+        message ("ONE : ${ARGS_BINARY_NAME}")
         set( LIBRARY_NAME  ${ARGS_BINARY_NAME})
+
+        # Precompile vala files
+        vala_precompile (VALA_C ${ARGS_BINARY_NAME}
+            ${VALA_FILES}
+            ${CONFIG_FILE}
+        PACKAGES
+            ${PACKAGES}
+        OPTIONS
+            # TODO : deprecated ??
+            --thread
+            # TODO
+            --vapidir=${CMAKE_CURRENT_SOURCE_DIR}/vapi/
+            ${ARGS_VALA_OPTIONS}
+        # For libraries
+        GENERATE_VAPI
+            ${LIBRARY_NAME}
+        GENERATE_HEADER
+            ${LIBRARY_NAME}
+        )
+    else()
+        message ("TWO ${ARGS_BINARY_NAME}")
+        # Precompile vala files
+        vala_precompile (VALA_C ${ARGS_BINARY_NAME}
+            ${VALA_FILES}
+            ${CONFIG_FILE}
+        PACKAGES
+            ${PACKAGES}
+        OPTIONS
+            # TODO : deprecated ??
+            --thread
+            # TODO
+            --vapidir=${CMAKE_CURRENT_SOURCE_DIR}/vapi/
+            ${ARGS_VALA_OPTIONS}
+
+        )
     endif()
 
-    # Precompile vala files
-    vala_precompile (VALA_C ${ARGS_BINARY_NAME}
-        ${VALA_FILES}
-        ${CONFIG_FILE}
-    PACKAGES
-        ${PACKAGES}
-    OPTIONS
-        # TODO : deprecated ??
-        --thread
-        # TODO
-        --vapidir=${CMAKE_CURRENT_SOURCE_DIR}/vapi/
-        ${ARGS_VALA_OPTIONS}
-    # For libraries
-    GENERATE_VAPI
-        ${LIBRARY_NAME}
-    GENERATE_HEADER
-        ${LIBRARY_NAME}
-    )
+
 
     # Build files ${ARGS_SOURCE_PATH}
     include_directories (${CMAKE_CURRENT_SOURCE_DIR})

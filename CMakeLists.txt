@@ -15,7 +15,7 @@ build_elementary_library (
     VERSION
         "0.9"
     LINKING
-        static
+        shared
     SOURCE_PATH
         src
     VALA_FILES
@@ -23,6 +23,23 @@ build_elementary_library (
     PACKAGES
         gee-0.8
         linux
+)
+
+build_elementary_cli (
+    BINARY_NAME
+        error_sigtrap
+    TITLE
+        "Vala stacktrace sigtrap test"
+    VERSION
+        "1.0"
+    SOURCE_PATH
+        samples
+    VALA_FILES
+        error_sigtrap.vala
+    C_OPTIONS
+        -rdynamic
+    PACKAGES
+        vala-stacktrace
 )
 
 # No translations

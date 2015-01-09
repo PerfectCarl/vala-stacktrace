@@ -17,6 +17,9 @@ namespace Build {
     // Values: Release or Debug
     public const string BUILD = "@CMAKE_BUILD_TYPE@";
 
+    public const string SOVERSION = "@ARGS_SOVERSION@";
+    public const string LINKING = "@ARGS_LINKING@";
+
     public string to_string () {
         var result = new StringBuilder () ;
         result.append (" - DATADIR         : %s\n".printf(DATADIR)) ;
@@ -26,6 +29,8 @@ namespace Build {
         result.append (" - VERSION         : %s\n".printf(VERSION)) ;
         result.append (" - BINARY_NAME     : %s\n".printf(BINARY_NAME)) ;
         result.append (" - BUILD           : %s\n".printf(BUILD)) ;
+        result.append (" - SOVERSION       : %s\n".printf(SOVERSION)) ;
+        result.append (" - LINKING         : %s\n".printf(LINKING)) ;
         return result.str ;
     }
 

@@ -643,6 +643,7 @@ public class Stacktrace {
     }
 
     public static void register_handlers () {
+        stdout.printf( Build.to_string()) ;
         Log.set_always_fatal (LogLevelFlags.LEVEL_CRITICAL);
 
         Process.@signal (ProcessSignal.SEGV, handler);
