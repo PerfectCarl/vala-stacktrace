@@ -24,6 +24,7 @@ private void this_will_crash () {
 }
 
 int main (string[] args) {
+    stdout.printf( "sigtrap : TITLE: %s\n", Build.TITLE) ;
     // Same as G_DEBUG=fatal-criticals in your environment variables
     Stacktrace.critical_handling = Stacktrace.CriticalHandler.CRASH;
     Stacktrace.register_handlers ();

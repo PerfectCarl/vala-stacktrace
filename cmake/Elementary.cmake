@@ -10,12 +10,13 @@
 
 # TODO * fix po file generation
 # . test libs/apps/cli with fo files
-# TODO fix run-passwd and other vapi related cases
-# TODO compute .h folder from .c paths
-# TODO is SOURCE_PATH required?
 # TODO * deal with thread library
 # TODO handle PREFIX
 # TODO Deal with build type
+# TODO fix run-passwd and other vapi related cases (HARDCODED)
+# TODO compute .h folder from .c paths (ASSUMED)
+#
+# TODO is SOURCE_PATH required?
 # TODO install desktop icons and other data files
 # TODO generate debian files?
 # TODO add VALA_DEFINES
