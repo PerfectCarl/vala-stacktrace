@@ -40,6 +40,9 @@ The library has two use cases:
  * tracing a call graph: a `Stacktrace` can be instantiated and displayed at any point [in your code](/doc/instanciation.md).
 
 The following signals are intercepted [SIGABRT][1], [SIGSEV][2], [SIGTRAP][3]
+[1]: /doc/sigabrt.md
+[2]: /doc/sigsev.md
+[3]: /doc/sigtrap.md
 
 ## How does it work?
 
