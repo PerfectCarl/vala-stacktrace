@@ -59,13 +59,13 @@ This library is [Apache licensed](http://www.apache.org/licenses/LICENSE-2.0) an
 
 To run all the samples, execute 
 
-```
+```shell
 ./run_samples.sh
 ```
 
-## Build
+## How to build
 
-```
+```shell
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr ../
 make
