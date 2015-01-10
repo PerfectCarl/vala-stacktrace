@@ -39,24 +39,13 @@ The library has two use cases:
  * crash interception: when a vala application crashes it emits a signal depending on the nature of error. Those signals are intercepted and before the application exits, the application stacktrace is displayed
  * tracing a call graph: a `Stacktrace` can be instantiated and displayed at any point [in your code](/doc/instanciation.md).
 
-The following signals are intercepted:
-
-| Signal       | Likely reason          | Note                                                              |
-|--------------|------------------------|-------------------------------------------------------------------|
-| [SIGABRT][1] | Failed critical assert |                                                                   |
-| [SIGSEV][2]  | Using a null reference |                                                                   |
-| [SIGTRAP][3] | Uncaught error         | Try adding a `throw` in your code to handle this error properly |
-
-[1]: /doc/sigabrt.md
-[2]: /doc/sigsev.md
-[3]: /doc/sigtrap.md
-
+The following signals are intercepted [SIGABRT][1], [SIGSEV][2], [SIGTRAP][3]
 
 ## How does it work?
 
 The library registers handlers for the `SIGABRT`, `SIGSEV` and `SIGTRAP` signals. 
 
-It processes the stacktrace symbols provided by [Linux.Backtrace.symbols](http://valadoc.org/#!api=linux/Linux.Backtrace.symbols) and retreive the file name, line number and function name using the symbols and calling [addr2line](http://linux.die.net/man/1/addr2line) **multiple times**.
+It processes the stacktrace symbols provided by [Linux.Backtrace.symbols](http://valadoc.org/#!api=linux/Linux.Backtrace.symbols) and retreive the file name, line number and function name using the symbols and calling [addr2line](http://linux.die.net/man/1/addr2line) and `nm` **multiple times**.
 
 > Note: it means that your application will spawn synchronuous external processes. 
 
@@ -66,16 +55,20 @@ This library is [Apache licensed](http://www.apache.org/licenses/LICENSE-2.0) an
   - gee-0.8
 
 ## Samples
-[Samples](/samples) are provided for a wide variety of use cases: 
-  - [SIGABRT][1] : failed critical assert
-  - 
+[Samples](/samples) are provided for a wide variety of use cases
 
-
-To compile and run all the samples, execute 
+To run all the samples, execute 
 
 ```
 ./run_samples.sh
 ```
 
+## Build
+
+```
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr ../
+make
+```
 ## [Changelog](CHANGELOG.md)
 
