@@ -1,0 +1,60 @@
+# Bundle version: 0.9
+#
+# File History:
+#    - 0.1 : initial release
+#      supported apps: useraccount, noise, eidete, vala-stacktrace
+
+# Columns:
+#   . (required): pc package
+#   . (required): comma separated list of debian packages or <none> or <same>
+#   . (optional): vala package if different from pc package
+
+# Vala
+gee-8.0                     -> libgee-0.8-dev
+
+gdk-x11-3.0                 -> <none>
+libwnck-3.0                 -> libwnck-3-dev
+xtst                        -> libxtst-dev
+
+# Gtk 3.0
+gtk+-3.0                    -> libgtk-3-dev
+webkit2gtk-3.0              -> libwebkit2gtk-3.0-dev
+gtksourceview-3.0           -> libgtksourceview-3.0-dev
+
+# Gstreamer 0.10
+gstreamer-interfaces-0.10   -> libgstreamer-plugins-base0.10-dev
+gstreamer-0.10              -> libgstreamer0.10-dev
+gstreamer-pbutils-0.10      -> libgstreamer0.10-dev
+gstreamer0.10-plugins-bad   -> <same>
+
+# GStreamer 1.0
+gstreamer1.0-plugins-bad    -> <same>
+gstreamer-pbutils-1.0       -> libgstreamer-plugins-base1.0-dev
+gstreamer-1.0               -> libgstreamer1.0-dev
+
+# Pantheon
+granite                     -> libgranite-dev
+switchboard-2.0             -> libswitchboard-2.0-dev
+
+accountsservice             -> libaccountsservice-dev               -> AccountsService-1.0
+pwquality                   -> libpwquality-dev
+gnome-desktop-3.0           -> libgnome-desktop-3-dev
+polkit-gobject-1            -> libpolkit-gobject-1-dev
+
+dbusmenu-glib-0.4           -> libdbusmenu-glib-dev, libdbus-glib-1-dev, libdbusmenu-gtk3-dev -> Dbusmenu-0.4
+
+# Needed ??
+glib-2.0                    -> libglib2.0-dev
+libgpod-1.0                 -> libgpod-dev
+indicate-0.7                -> libindicate-dev                        -> Indicate-0.7
+json-glib-1.0               -> libjson-glib-dev
+libnotify                   -> libnotify-dev
+libpeas-1.0                 -> libpeas-dev
+libpeas-gtk-1.0             -> libpeas-dev
+libsoup-2.4                 -> libsoup2.4-dev
+sqlheavy-0.2                -> libsqlheavy-dev
+taglib_c                    -> libtagc0-dev
+libxml-2.0                  -> libxml2-dev
+zeitgeist-2.0               -> libzeitgeist-dev
+rest-0.7                    -> librest-0.7-0
+
