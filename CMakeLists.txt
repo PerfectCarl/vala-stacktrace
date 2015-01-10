@@ -6,23 +6,8 @@ include (Elementary)
 set (VALA_VERSION_MIN "0.26")
 
 set (BUILD_TYPE "Release")
+set (DEBIAN_PACKAGE "lib-vala-stracktrace-dev")
 
-build_elementary_cli (
-    BINARY_NAME
-        error_sigtrap
-    TITLE
-        "Vala stacktrace sigtrap test"
-    VERSION
-        "1.0"
-    SOURCE_PATH
-        samples
-    VALA_FILES
-        error_sigtrap.vala
-    C_OPTIONS
-        -rdynamic
-    PACKAGES
-        vala-stacktrace
-)
 
 build_elementary_library (
     BINARY_NAME

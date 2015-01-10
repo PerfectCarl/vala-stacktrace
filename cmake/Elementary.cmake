@@ -7,22 +7,37 @@
 #    - 0.4 : misc fixes
 #    - 0.5 : support shared libraries
 #    - 0.6 : support cli apps. Support C_OPTIONS
+#    - 0.7 : add full dependencies support
 
 # TODO * fix po file generation
 # . test libs/apps/cli with fo files
+# TODO fix run-passwd and other vapi related cases (HARDCODED)
+# TODO support dependencies min verion
+
+# TODO add glib if needed (for very basic cli app)
+
+# TODO force the people to have a data/${target}.desktop and install it
+# TODO install desktop icons and other data files
+#
 # TODO * deal with thread library
 # TODO handle PREFIX
 # TODO Deal with build type
-# TODO fix run-passwd and other vapi related cases (HARDCODED)
 # TODO compute .h folder from .c paths (ASSUMED)
 #
 # TODO is SOURCE_PATH required?
-# TODO install desktop icons and other data files
 # TODO generate debian files?
 # TODO add VALA_DEFINES
-# TODO force the people to have a data/${target}.desktop and install it
 # TODO PKGDATADIR and DATADIR always needed?
 # TODO include ${CMAKE_CURRENT_SOURCE_DIR}/vapi/ to vapidir
+
+# TODO support make dist ?
+#    Add 'make dist' command for creating release tarball
+#    set (CPACK_PACKAGE_VERSION ${VERSION})
+#    set (CPACK_SOURCE_GENERATOR "TGZ")
+#    set (CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}")
+#    set (CPACK_SOURCE_IGNORE_FILES "/build/;/.bzr/;/.bzrignore;~$;${CPACK_SOURCE_IGNORE_FILES}")
+#    include (CPack)
+#    add_custom_target (dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source)
 
 find_package (PkgConfig)
 
@@ -31,6 +46,7 @@ include (ValaPrecompile)
 include (Translations)
 include (GNUInstallDirs)
 include (GSettings)
+include (Dependencies)
 
 # Comment this out to enable C compiler warnings
 add_definitions (-w)
@@ -180,8 +196,7 @@ macro(build_elementary_cli)
 endmacro()
 
 macro(install_elementary_cli ELEM_NAME)
-    #install (TARGETS ${CMAKE_PROJECT_NAME} DESTINATION bin)
-    #install (TARGETS ${ELEM_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+    install (TARGETS ${ELEM_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
 endmacro()
 
 macro(build_elementary_library)
@@ -199,7 +214,6 @@ macro(build_elementary_library)
     set (PKGDATADIR "")
     set (GETTEXT_PACKAGE "")
 
-    # configure_file (${CMAKE_SOURCE_DIR}/core/${CORE_LIBRARY_NAME}.pc.cmake ${CMAKE_BINARY_DIR}/core/${CORE_LIBRARY_NAME}.pc)
     prepare_elementary (
         BINARY_NAME
             ${ARGS_BINARY_NAME}
@@ -240,6 +254,7 @@ macro(build_elementary_library)
     else()
         add_library (${ARGS_BINARY_NAME} SHARED ${VALA_C} ${C_FILES})
         if( NOT ARGS_SOVERSION)
+            message ("The parameter SO_VERSION is not specified so '0' is used.")
             set( ARGS_SOVERSION "0")
         endif()
 
@@ -349,9 +364,8 @@ macro(prepare_elementary)
         include_directories (${ARGS_SOURCE_PATH})
     endif()
 
-
     # Check packages that are not provided in the vapi folder
-    set(checked_packages "")
+    set(checked_pc_packages "")
     set(vapi_packages "")
 
     # Add the C defines
@@ -365,47 +379,60 @@ macro(prepare_elementary)
     endforeach()
 
     # Handle the packges
-    set (PACKAGES "")
-    set (COMPLETE_DIST_PACKAGES "")
-    set (ELEM_DEPS_PACKAGES "")
-    foreach(pkg ${ARGS_PACKAGES})
-        # Deal with special UGLY cases here
-        if( pkg STREQUAL "AccountsService-1.0")
-            SET (pkg "accountsservice")
-        endif()
+    set (VALA_PACKAGES "")
+    # Used in libs.pc.make
+    set (COMPLETE_DIST_PC_PACKAGES "")
+    # Used in libs.deps.make
+    set (ELEM_DEPS_PC_PACKAGES "")
+    foreach(vala_package ${ARGS_PACKAGES})
+        # TODO Deal with special UGLY cases here
+        #if( pkg STREQUAL "AccountsService-1.0")
+        #    SET (pkg "accountsservice")
+        #endif()
+        set (pc_package "")
+        get_pc_package (${vala_package} pc_package)
+        #message ("DEP ${vala_package} ${pc_package}")
 
         #if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vapi/${pkg}.vapi" OR pkg STREQUAL "posix")
         # TODO deal with run-passwd
-        if(pkg STREQUAL "posix" OR pkg STREQUAL "run-passwd" OR pkg STREQUAL "linux")
+        if(vala_package STREQUAL "posix" OR vala_package STREQUAL "run-passwd" OR vala_package STREQUAL "linux")
             # message ("Ignoring checking for ${pkg}")
-            list(APPEND vapi_packages "${pkg}")
+            list(APPEND vapi_packages "${vala_package}")
         else()
             # message ("Adding checked pkg ${pkg}")
-            list(APPEND checked_packages "${pkg}")
+            list(APPEND checked_pc_packages "${pc_package}")
         endif()
 
         # Posix and linux are vala only packages without
         # c libraries -> they should be excluded from the pc and
         # deps files
-        if(NOT pkg STREQUAL "run-passwd" AND NOT pkg STREQUAL "linux" AND NOT pkg STREQUAL "posix")
-            set(COMPLETE_DIST_PACKAGES " ${COMPLETE_DIST_PACKAGES} ${pkg}")
-            set(ELEM_DEPS_PACKAGES  "${ELEM_DEPS_PACKAGES}${pkg}\n")
+        if(NOT vala_package STREQUAL "run-passwd" AND NOT vala_package STREQUAL "linux" AND NOT vala_package STREQUAL "posix")
+            set(COMPLETE_DIST_PC_PACKAGES " ${COMPLETE_DIST_PC_PACKAGES} ${pc_package}")
+            set(ELEM_DEPS_PC_PACKAGES  "${ELEM_DEPS_PC_PACKAGES}${pc_package}\n")
         endif()
 
         # TODO Handle threading better with the options etc
         # TODO test this
-        if( NOT pkg STREQUAL "gthread-2.0")
-            set(PACKAGES ${PACKAGES} ${pkg})
+        if( NOT vala_package STREQUAL "gthread-2.0")
+            set(VALA_PACKAGES ${VALA_PACKAGES} ${vala_package})
         endif()
     endforeach()
 
-    if( checked_packages )
-        pkg_check_modules (DEPS REQUIRED ${checked_packages})
+    set (DEPS_CFLAGS "")
+    set (DEPS_LIBRARIES "")
+    set (DEPS_LIBRARY_DIRS "")
+
+    #message ("Checked ${checked_pc_packages}")
+    if( checked_pc_packages )
+        pkg_check_modules (DEPS REQUIRED ${checked_pc_packages})
         add_definitions (${DEPS_CFLAGS})
         link_libraries (${DEPS_LIBRARIES})
         link_directories (${DEPS_LIBRARY_DIRS})
     endif()
-    # Add vapi folder if present
+    # TOOD Add vapi folder if present
+    #message (" DEPS_CFLAGS : ${DEPS_CFLAGS}")
+    #message (" DEPS_LIBRARIES: ${DEPS_LIBRARIES}")
+    #message (" DEPS_LIBRARY_DIRS: ${DEPS_LIBRARY_DIRS}")
 
     # Generate config file
     if( ARGS_CONFIG_NAME)
@@ -414,7 +441,6 @@ macro(prepare_elementary)
     endif()
 
     if (ARGS_LINKING)
-        message ("ONE : ${ARGS_BINARY_NAME}")
         set( LIBRARY_NAME  ${ARGS_BINARY_NAME})
 
         # Precompile vala files
@@ -422,7 +448,7 @@ macro(prepare_elementary)
             ${VALA_FILES}
             ${CONFIG_FILE}
         PACKAGES
-            ${PACKAGES}
+            ${VALA_PACKAGES}
         OPTIONS
             # TODO : deprecated ??
             --thread
@@ -437,16 +463,14 @@ macro(prepare_elementary)
             ${LIBRARY_NAME}
         )
         set( ELEM_VAPI_DIR ${CMAKE_BINARY_DIR})
-        message( "ELEM_VAPI_DIR ${ELEM_VAPI_DIR}")
 
     else()
-        message ("TWO ${ARGS_BINARY_NAME}")
         # Precompile vala files
         vala_precompile (VALA_C ${ARGS_BINARY_NAME}
             ${VALA_FILES}
             ${CONFIG_FILE}
         PACKAGES
-            ${PACKAGES}
+            ${VALA_PACKAGES}
         OPTIONS
             # TODO : deprecated ??
             --thread
@@ -456,8 +480,6 @@ macro(prepare_elementary)
 
         )
     endif()
-
-
 
     # Build files ${ARGS_SOURCE_PATH}
     include_directories (${CMAKE_CURRENT_SOURCE_DIR})

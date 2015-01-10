@@ -15,9 +15,11 @@
  */
 
 /* History
- *  - Version 1.1 :
+ *  - 1.2 :
+ *        . Include elementary.cmake
+ *  - 1.1 :
  *        . Support debugging in multiple .so
- *  - Version 1.0 : Oct, 18 2014
+ *  - 1.0 : Oct, 18 2014
  *        . initial version
  *        . Header not displaying an error for user created stacktrace
  *        . Change spacing

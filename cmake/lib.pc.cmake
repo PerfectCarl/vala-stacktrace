@@ -9,4 +9,4 @@ Description: @ARGS_BINARY_NAME@: @ELEM_TITLE@ headers
 Version: @ELEM_VERSION@
 Libs: -l@ARGS_BINARY_NAME@
 Cflags: -I@DOLLAR@{includedir}/@ARGS_BINARY_NAME@
-Requires: @COMPLETE_DIST_PACKAGES@
+Requires: @COMPLETE_DIST_PC_PACKAGES@
