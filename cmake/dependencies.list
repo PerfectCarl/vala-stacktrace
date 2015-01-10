@@ -3,6 +3,8 @@
 # File History:
 #    - 0.1 : initial release
 #      supported apps: useraccount, noise, eidete, vala-stacktrace
+#    - 0.2 : supports gala, switchboard
+
 
 # Columns:
 #   . (required): pc package
@@ -36,7 +38,7 @@ gstreamer-1.0               -> libgstreamer1.0-dev
 granite                     -> libgranite-dev
 switchboard-2.0             -> libswitchboard-2.0-dev
 
-accountsservice             -> libaccountsservice-dev               -> AccountsService-1.0
+accountsservice             -> libaccountsservice-dev                -> AccountsService-1.0
 pwquality                   -> libpwquality-dev
 gnome-desktop-3.0           -> libgnome-desktop-3-dev
 polkit-gobject-1            -> libpolkit-gobject-1-dev
@@ -58,3 +60,12 @@ libxml-2.0                  -> libxml2-dev
 zeitgeist-2.0               -> libzeitgeist-dev
 rest-0.7                    -> librest-0.7-0
 
+libbamf3                    -> libbamf3-dev
+libcanberra                 -> libcanberra-dev
+libcanberra-gtk3            -> libcanberra-gtk3-dev                   -> libcanberra-gtk
+clutter-1.0                 -> libclutter-1.0-dev
+clutter-gtk-1.0             -> libclutter-gtk-1.0-dev
+libmutter                   -> libmutter-dev
+plank                       -> libplank-dev
+unity                       -> libunity-dev
+cheese-gtk                  -> libcheese-gtk-dev
